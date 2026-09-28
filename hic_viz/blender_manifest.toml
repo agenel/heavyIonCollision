@@ -1,0 +1,11 @@
+schema_version = "1.0.0"
+id = "hic_viz"
+version = "0.1.0"
+name = "Heavy Ion Collision Viz"
+tagline = "Physics-driven heavy-ion collision animation with a GUI"
+maintainer = "Arif Soylu"
+type = "add-on"
+blender_version_min = "4.2.0"
+license = ["SPDX:GPL-3.0-or-later"]
+[permissions]
+files = "Read and write event caches (npz / vdb) on disk"

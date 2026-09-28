@@ -1,0 +1,6 @@
+{
+  "name": "heavy-ion-web",
+  "private": true,
+  "type": "module",
+  "description": "Browser explorers (The Little Bang, The Nucleon Exchange); ES modules, no build step."
+}

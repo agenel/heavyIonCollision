@@ -1,0 +1,339 @@
+{
+ "_comment": "Identified-particle dN/dy at midrapidity per centrality and the kinetic freeze-out blast-wave parameters. Sources: ALICE PRC 88 (2013) 044910 arXiv:1303.0737 Tables 3-5 (Pb-Pb 2.76 TeV); ALICE arXiv:1910.07678 (5.02 TeV, 0-5% and 80-90%); ALICE PLB 728 (2014) 216 arXiv:1307.5543 (Xi, Omega); ALICE arXiv:1404.0495 (phi); ALICE arXiv:1506.08951 (d); STAR PRC 79 (2009) 034909 arXiv:0808.2041 Tables VII-X (Au-Au 200 GeV). Neutral yields: pi0 = (pi+ + pi-)/2, K0 + K0bar = K+ + K-, n = p, nbar = pbar, Lambda taken as 0.5 * (Xi + ...): Lambda dN/dy from ALICE PRL 111 222301 not extracted -> estimated from Lambda/pi ~ 0.036 (statistical hadronization, Andronic et al. Nature 561 (2018) 321) [flagged approximate].",
+ "PbPb_2760": {
+  "centrality_mid": [
+   2.5,
+   15,
+   25,
+   45,
+   65,
+   85
+  ],
+  "pi+": [
+   733,
+   455,
+   307,
+   124,
+   37,
+   6.6
+  ],
+  "K+": [
+   109,
+   68,
+   46,
+   18.3,
+   5.1,
+   0.85
+  ],
+  "p": [
+   34,
+   21.0,
+   14.4,
+   6.1,
+   1.9,
+   0.36
+  ],
+  "Lambda_over_pi": 0.036,
+  "Xi-": [
+   3.34,
+   2.1,
+   1.5,
+   0.62,
+   0.2,
+   0.035
+  ],
+  "Omega-": [
+   0.58,
+   0.37,
+   0.26,
+   0.1,
+   0.03,
+   0.005
+  ],
+  "phi": [
+   13.8,
+   8.6,
+   5.9,
+   2.4,
+   0.72,
+   0.13
+  ],
+  "d": [
+   0.098,
+   0.062,
+   0.043,
+   0.017,
+   0.005,
+   0.0009
+  ],
+  "blastwave": {
+   "centrality_mid": [
+    2.5,
+    15,
+    25,
+    45,
+    65,
+    85
+   ],
+   "beta_T": [
+    0.651,
+    0.639,
+    0.625,
+    0.574,
+    0.489,
+    0.357
+   ],
+   "T_kin_MeV": [
+    95,
+    99,
+    101,
+    112,
+    129,
+    151
+   ],
+   "n": [
+    0.712,
+    0.738,
+    0.779,
+    0.944,
+    1.292,
+    2.262
+   ]
+  },
+  "mean_pt": {
+   "pi": [
+    0.517,
+    0.517,
+    0.512,
+    0.492,
+    0.465,
+    0.434
+   ],
+   "K": [
+    0.876,
+    0.871,
+    0.86,
+    0.818,
+    0.76,
+    0.711
+   ],
+   "p": [
+    1.333,
+    1.311,
+    1.281,
+    1.178,
+    1.05,
+    0.905
+   ]
+  },
+  "_note": "Xi, Omega, phi, d outside the measured bins are scaled with pi+ (same centrality dependence assumed) [approximate]"
+ },
+ "PbPb_5020": {
+  "centrality_mid": [
+   2.5,
+   85
+  ],
+  "pi+": [
+   850,
+   7.6
+  ],
+  "K+": [
+   136.5,
+   1.0
+  ],
+  "p": [
+   37.3,
+   0.42
+  ],
+  "Lambda_over_pi": 0.036,
+  "Xi-": [
+   3.9,
+   0.04
+  ],
+  "Omega-": [
+   0.68,
+   0.006
+  ],
+  "phi": [
+   16,
+   0.15
+  ],
+  "d": [
+   0.11,
+   0.001
+  ],
+  "blastwave": {
+   "centrality_mid": [
+    2.5,
+    85
+   ],
+   "beta_T": [
+    0.663,
+    0.355
+   ],
+   "T_kin_MeV": [
+    90,
+    161
+   ],
+   "n": [
+    0.735,
+    2.42
+   ]
+  },
+  "mean_pt": {
+   "pi": [
+    0.568,
+    0.44
+   ],
+   "K": [
+    0.918,
+    0.72
+   ],
+   "p": [
+    1.448,
+    0.92
+   ]
+  },
+  "_note": "0-5% and 80-90% from ALICE 1910.07678; intermediate centralities interpolated in log(dN/dy); strange/phi/d scaled from 2.76 TeV by the pion ratio [approximate]"
+ },
+ "AuAu_200": {
+  "centrality_mid": [
+   2.5,
+   75
+  ],
+  "pi+": [
+   322,
+   20
+  ],
+  "pi-": [
+   327,
+   20.5
+  ],
+  "K+": [
+   51.3,
+   2.7
+  ],
+  "K-": [
+   49.5,
+   2.6
+  ],
+  "p": [
+   34.7,
+   1.6
+  ],
+  "pbar": [
+   26.7,
+   1.25
+  ],
+  "Lambda_over_pi": 0.05,
+  "Xi-": [
+   2.2,
+   0.08
+  ],
+  "Omega-": [
+   0.53,
+   0.02
+  ],
+  "phi": [
+   7.7,
+   0.3
+  ],
+  "d": [
+   0.09,
+   0.002
+  ],
+  "blastwave": {
+   "centrality_mid": [
+    2.5,
+    75
+   ],
+   "beta_T": [
+    0.592,
+    0.358
+   ],
+   "T_kin_MeV": [
+    89,
+    129
+   ],
+   "n": [
+    0.82,
+    2.0
+   ]
+  },
+  "mean_pt": {
+   "pi": [
+    0.42,
+    0.38
+   ],
+   "K": [
+    0.72,
+    0.6
+   ],
+   "p": [
+    1.1,
+    0.85
+   ]
+  },
+  "_note": "0-5% from STAR 0808.2041; 70-80% values and strange yields at RHIC are order-of-magnitude scalings [approximate; verify with STAR PRC 79 034909 Tab. VII/VIII and STAR PRL 98 062301]"
+ },
+ "pPb_5020": {
+  "centrality_mid": [
+   2.5
+  ],
+  "pi+": [
+   1.0
+  ],
+  "K+": [
+   0.16058823529411764
+  ],
+  "p": [
+   0.04388235294117647
+  ],
+  "Lambda_over_pi": 0.036,
+  "Xi-": [
+   0.004588235294117647
+  ],
+  "Omega-": [
+   0.0008
+  ],
+  "phi": [
+   0.018823529411764704
+  ],
+  "d": [
+   6.470588235294117e-05
+  ],
+  "blastwave": {
+   "centrality_mid": [
+    2.5,
+    90
+   ],
+   "beta_T": [
+    0.547,
+    0.26
+   ],
+   "T_kin_MeV": [
+    143,
+    166
+   ],
+   "n": [
+    1.07,
+    3.9
+   ]
+  },
+  "mean_pt": {
+   "centrality_mid": [
+    2.5
+   ],
+   "pi": [
+    0.545
+   ],
+   "K": [
+    0.937
+   ],
+   "p": [
+    1.248
+   ]
+  },
+  "_note": "blast wave: ALICE PLB 728 (2014) 25 arXiv:1307.6796 Table 5 (V0A 0-5% and 80-100%); <pT> 0-5%: HEPData ins1244523 Tables 18-21. Species ratios: Pb-Pb 5.02 TeV 0-5% ratios assumed (relative normalisation only), deuteron halved for the smaller source [approximate]"
+ }
+}

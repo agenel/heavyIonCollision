@@ -1,0 +1,47 @@
+{
+ "params": {
+  "Kr0": 2e-23,
+  "DNN0": 0.06,
+  "sC": 1.5,
+  "aC": 0.4,
+  "Tmin": 7
+ },
+ "score": 0.6022335057316959,
+ "train": [
+  "C2178.002.2",
+  "D0816.004.0",
+  "D0843.003.0",
+  "D0845.003.0@249"
+ ],
+ "grid": {
+  "Kr0": [
+   2e-23
+  ],
+  "DNN0": [
+   0.03,
+   0.06
+  ],
+  "sC": [
+   1,
+   1.5
+  ],
+  "aC": [
+   0.4,
+   0.6
+  ],
+  "Tmin": [
+   5,
+   7,
+   10
+  ]
+ },
+ "evaluated": 24,
+ "parts": [
+  "C2178.002.2 rms 0.87 mean 0.48",
+  "D0816.004.0 rms 0.57 mean 0.21",
+  "D0843.003.0 rms 0.51 mean -0.17",
+  "D0845.003.0@249 rms 0.46 mean -0.13"
+ ],
+ "note": "Global parameters fitted by scripts/mnt_calibrate.sh (grid search; minimum mean rms of log10(model/data) over the training datasets). Not tuned per system.",
+ "date": "2026-09-26"
+}

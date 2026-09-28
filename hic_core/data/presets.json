@@ -1,0 +1,330 @@
+{
+ "_comment": "Ready-made collision setups. 'params' are EventParams fields; 'look' are scene options (camera preset, camera move). Every system listed here has its multiplicity, flow and freeze-out inputs in the data tables, either measured directly or via the documented fallbacks (see docs/validation.md 'Data sources per case').",
+ "PbPb_5020_central": {
+  "label": "Pb-Pb 5.02 TeV, 0-5%",
+  "description": "LHC Run 2, most central: largest, hottest, longest-lived QGP; nearly round overlap, small v2.",
+  "params": {
+   "A": "Pb208",
+   "B": "Pb208",
+   "sqrt_snn": 5020,
+   "centrality": [
+    0,
+    5
+   ]
+  },
+  "look": {
+   "camera": "side",
+   "move": "follow"
+  }
+ },
+ "PbPb_5020_midcentral": {
+  "label": "Pb-Pb 5.02 TeV, 30-40%",
+  "description": "Almond-shaped overlap; the orbit ends near the beam axis where the elliptic flow (v2 ~ 0.1) is visible.",
+  "params": {
+   "A": "Pb208",
+   "B": "Pb208",
+   "sqrt_snn": 5020,
+   "centrality": [
+    30,
+    40
+   ]
+  },
+  "look": {
+   "camera": "side",
+   "move": "orbit"
+  }
+ },
+ "PbPb_5020_peripheral": {
+  "label": "Pb-Pb 5.02 TeV, 60-70%",
+  "description": "Grazing collision: few participants, many spectators, short-lived droplet (least accurate class of the Level-A model).",
+  "params": {
+   "A": "Pb208",
+   "B": "Pb208",
+   "sqrt_snn": 5020,
+   "centrality": [
+    60,
+    70
+   ]
+  },
+  "look": {
+   "camera": "side",
+   "move": "follow"
+  }
+ },
+ "PbPb_2760_central": {
+  "label": "Pb-Pb 2.76 TeV, 0-5%",
+  "description": "LHC Run 1 energy.",
+  "params": {
+   "A": "Pb208",
+   "B": "Pb208",
+   "sqrt_snn": 2760,
+   "centrality": [
+    0,
+    5
+   ]
+  },
+  "look": {
+   "camera": "side",
+   "move": "follow"
+  }
+ },
+ "XeXe_5440_central": {
+  "label": "Xe-Xe 5.44 TeV, 0-5%",
+  "description": "Deformed Xe-129 (beta2 = 0.18), randomly oriented.",
+  "params": {
+   "A": "Xe129",
+   "B": "Xe129",
+   "sqrt_snn": 5440,
+   "centrality": [
+    0,
+    5
+   ]
+  },
+  "look": {
+   "camera": "side",
+   "move": "follow"
+  }
+ },
+ "OO_5360_central": {
+  "label": "O-O 5.36 TeV, 0-5%",
+  "description": "LHC 2025 light-ion run: a QGP droplet from 16+16 nucleons.",
+  "params": {
+   "A": "O16",
+   "B": "O16",
+   "sqrt_snn": 5360,
+   "centrality": [
+    0,
+    5
+   ]
+  },
+  "look": {
+   "camera": "side",
+   "move": "follow"
+  }
+ },
+ "AuAu_200_central": {
+  "label": "Au-Au 200 GeV, 0-5%",
+  "description": "RHIC top energy: thicker pancakes (gamma ~ 107), cooler and shorter QGP than at the LHC.",
+  "params": {
+   "A": "Au197",
+   "B": "Au197",
+   "sqrt_snn": 200,
+   "centrality": [
+    0,
+    5
+   ]
+  },
+  "look": {
+   "camera": "side",
+   "move": "follow"
+  }
+ },
+ "AuAu_200_midcentral": {
+  "label": "Au-Au 200 GeV, 30-40%",
+  "description": "RHIC almond; orbit to the beam view to see the elliptic flow.",
+  "params": {
+   "A": "Au197",
+   "B": "Au197",
+   "sqrt_snn": 200,
+   "centrality": [
+    30,
+    40
+   ]
+  },
+  "look": {
+   "camera": "side",
+   "move": "orbit"
+  }
+ },
+ "AuAu_62_central": {
+  "label": "Au-Au 62.4 GeV, 0-5%",
+  "description": "Lower RHIC energy: gamma ~ 33, the nuclei are visibly thicker discs.",
+  "params": {
+   "A": "Au197",
+   "B": "Au197",
+   "sqrt_snn": 62.4,
+   "centrality": [
+    0,
+    5
+   ]
+  },
+  "look": {
+   "camera": "side",
+   "move": "follow"
+  }
+ },
+ "UU_193_tiptip": {
+  "label": "U-U 193 GeV, tip-tip, b = 0",
+  "description": "Prolate U-238 with symmetry axes along the beam: round overlap, highest multiplicity, small eps2 (STAR PRL 115 222301 geometry).",
+  "params": {
+   "A": "U238",
+   "B": "U238",
+   "sqrt_snn": 193,
+   "b": 0.5,
+   "centrality": [
+    0,
+    1
+   ],
+   "orientation": "tip-tip"
+  },
+  "look": {
+   "camera": "iso",
+   "move": "follow"
+  }
+ },
+ "UU_193_bodybody": {
+  "label": "U-U 193 GeV, body-body, b = 0",
+  "description": "Symmetry axes perpendicular to beam and b: elongated overlap and large eps2 even at zero impact parameter.",
+  "params": {
+   "A": "U238",
+   "B": "U238",
+   "sqrt_snn": 193,
+   "b": 0.5,
+   "centrality": [
+    0,
+    1
+   ],
+   "orientation": "body-body"
+  },
+  "look": {
+   "camera": "side",
+   "move": "orbit"
+  }
+ },
+ "NeNe_5360_central": {
+  "label": "Ne-Ne 5.36 TeV, 0-5%",
+  "description": "LHC 2025 run with strongly deformed Ne-20 (beta2 = 0.72, 'bowling pin'); compare with O-O.",
+  "params": {
+   "A": "Ne20",
+   "B": "Ne20",
+   "sqrt_snn": 5360,
+   "centrality": [
+    0,
+    5
+   ]
+  },
+  "look": {
+   "camera": "side",
+   "move": "follow"
+  }
+ },
+ "pPb_5020_central": {
+  "label": "p-Pb 5.02 TeV, 0-5%",
+  "description": "A proton hits a lead nucleus: a small, short-lived droplet that still shows collective flow (v2 ~ 0.06).",
+  "params": {
+   "A": "p",
+   "B": "Pb208",
+   "sqrt_snn": 5020,
+   "centrality": [
+    0,
+    5
+   ]
+  },
+  "look": {
+   "camera": "side",
+   "move": "follow"
+  }
+ },
+ "dAu_200_central": {
+  "label": "d-Au 200 GeV, 0-5%",
+  "description": "RHIC small-system geometry scan: a deuteron (two nucleons, Hulthen wave function) on gold.",
+  "params": {
+   "A": "d",
+   "B": "Au197",
+   "sqrt_snn": 200,
+   "centrality": [
+    0,
+    5
+   ]
+  },
+  "look": {
+   "camera": "side",
+   "move": "follow"
+  }
+ },
+ "He3Au_200_central": {
+  "label": "3He-Au 200 GeV, 0-5%",
+  "description": "Three-nucleon projectile: triangular initial geometry, enhanced v3 (PHENIX Nature Phys. 15 (2019) 214).",
+  "params": {
+   "A": "He3",
+   "B": "Au197",
+   "sqrt_snn": 200,
+   "centrality": [
+    0,
+    5
+   ]
+  },
+  "look": {
+   "camera": "beam",
+   "move": "static"
+  }
+ },
+ "RuRu_200_central": {
+  "label": "Ru-Ru 200 GeV, 0-5%",
+  "description": "STAR isobar run (Ru-96, 44 protons).",
+  "params": {
+   "A": "Ru96",
+   "B": "Ru96",
+   "sqrt_snn": 200,
+   "centrality": [
+    0,
+    5
+   ]
+  },
+  "look": {
+   "camera": "side",
+   "move": "follow"
+  }
+ },
+ "ZrZr_200_central": {
+  "label": "Zr-Zr 200 GeV, 0-5%",
+  "description": "STAR isobar partner (Zr-96, 40 protons).",
+  "params": {
+   "A": "Zr96",
+   "B": "Zr96",
+   "sqrt_snn": 200,
+   "centrality": [
+    0,
+    5
+   ]
+  },
+  "look": {
+   "camera": "side",
+   "move": "follow"
+  }
+ },
+ "CuAu_200_central": {
+  "label": "Cu-Au 200 GeV, 0-5%",
+  "description": "Asymmetric collision: the small Cu nucleus is fully absorbed inside Au, giving a dipole-shaped fireball.",
+  "params": {
+   "A": "Cu63",
+   "B": "Au197",
+   "sqrt_snn": 200,
+   "centrality": [
+    0,
+    5
+   ]
+  },
+  "look": {
+   "camera": "side",
+   "move": "follow"
+  }
+ },
+ "AuAu_19_central": {
+  "label": "Au-Au 19.6 GeV, 0-5% (beam energy scan)",
+  "description": "RHIC BES: gamma ~ 10, the nuclei are only ~10x flattened and take ~1.3 fm/c to pass. Outside the model's comfort zone (boost invariance, mu_B = 0 EoS); see the HUD warning.",
+  "params": {
+   "A": "Au197",
+   "B": "Au197",
+   "sqrt_snn": 19.6,
+   "centrality": [
+    0,
+    5
+   ]
+  },
+  "look": {
+   "camera": "side",
+   "move": "follow"
+  }
+ }
+}

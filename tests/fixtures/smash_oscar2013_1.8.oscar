@@ -1,0 +1,10 @@
+#!OSCAR2013 particle_lists t x y z mass p0 px py pz pdg ID charge
+# Units: fm fm fm fm GeV GeV GeV GeV GeV none none e
+# SMASH-1.8
+# event 1 in 2
+-5 1.2 0.3 -4.9 0.938 5.08727 0 0 5 2212 0 1
+-5 -1.2 -0.3 4.9 0.938 5.08727 0 0 -5 2112 1 0
+# event 1 out 2
+1 1.3 0.2 0.98 0.938 5.08727 0.1 -0.05 4.998 2212 0 1
+1 -1.3 -0.2 -0.98 0.938 5.08727 -0.1 0.05 -4.998 2112 1 0
+# event 1 end 0 impact   2.400 empty no

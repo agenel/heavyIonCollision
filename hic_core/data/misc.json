@@ -1,0 +1,45 @@
+{
+ "_comment": "Miscellaneous calibrated constants with sources.",
+ "entropy_per_charged_hadron": {
+  "value": 6.7,
+  "source": "Hanus, Mazeliauskas, Reygers PRC 100 (2019) 064903 arXiv:1908.02792: dS/dy = (6.7 +/- 0.8) dN_ch/deta at chemical freeze-out [value from memory of the abstract; verify]"
+ },
+ "T_chem_MeV": {
+  "value": 156.5,
+  "source": "Andronic, Braun-Munzinger, Redlich, Stachel Nature 561 (2018) 321 arXiv:1710.09425"
+ },
+ "T_c_MeV": {
+  "value": 156.5,
+  "source": "HotQCD PLB 795 (2019) 15 arXiv:1812.08235"
+ },
+ "tau_0_fm": {
+  "value": 0.4,
+  "range": [
+   0.2,
+   1.2
+  ],
+  "source": "Heinz & Snellings arXiv:1301.2826 (0.2-0.4); IP-Glasma+MUSIC tau_switch = 0.4 (arXiv:2005.14682); Bayesian tau_fs = 1.16 (Bernhard 2019)"
+ },
+ "fermi_momentum_GeV": {
+  "value": 0.26,
+  "source": "Moniz et al. PRL 26 (1971) 445 (p_F ~ 260 MeV/c for heavy nuclei); rms per component p_F/sqrt(5)"
+ },
+ "decoupling_time_fm": {
+  "LHC": 10.5,
+  "RHIC": 7.5,
+  "source": "ALICE PLB 696 (2011) 328 arXiv:1012.4035 (10-11 fm/c, 40% larger than RHIC)"
+ },
+ "eta_over_s": {
+  "value": 0.12,
+  "source": "Schenke, Shen, Tribedy PRC 102 (2020) 044905; JETSCAPE 2021 ~0.1; KSS bound 0.08"
+ },
+ "kappa_v_over_eps": {
+  "_comment": "Linear-response ratios kappa_n = v_n/eps_n derived from the Pb-Pb 5.02 TeV tables (flow.json / centrality_tables.json) at 20-30%: used for systems without measured flow",
+  "kappa2": 0.33,
+  "kappa3": 0.17
+ },
+ "hadronic_phase_fm": {
+  "value": 4.5,
+  "source": "ALICE PLB 802 (2020) 135225 arXiv:1910.14419: K*(892)0/K suppression implies 4-7 fm/c between chemical and kinetic freeze-out in central Pb-Pb; 4.5 chosen so the median emission time is close to the HBT decoupling time (10-11 fm/c, ALICE 1012.4035)"
+ }
+}

@@ -1,0 +1,232 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Nucleon Exchange</title>
+<meta name="description" content="Multi-nucleon transfer between heavy nuclei near the Coulomb barrier: drag the angular momentum, watch nucleons cross the neck, and compare the products with measured cross sections.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #07090d; --panel: rgba(13, 16, 23, 0.82); --panel-solid: #0e1118;
+    --line: rgba(150, 172, 205, 0.16); --line-strong: rgba(150, 172, 205, 0.32);
+    --text: #e6eaf1; --muted: #8d97a9; --faint: #5b6476;
+    --amber: #ffb14a;   /* projectile */
+    --ice: #7cc4ff;     /* target */
+    --proton: #ff7a66; --neutron: #b9c6d8;
+    --accent: #a8dcff; --warn: #ffcf70; --good: #7fd6a4; --bad: #ff8b7b;
+    --display: "Unbounded", "Avenir Next", "Segoe UI", sans-serif;
+    --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    --r: 12px;
+  }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body { background: var(--bg); color: var(--text); font: 14px/1.45 var(--body); overflow: hidden; margin: 0; }
+  button, input, select { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  #app { position: relative; height: 100%; }
+  #stage { position: absolute; inset: 0; }
+  #stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+  .eyebrow { font: 500 10.5px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .nt, .eyebrow.nt { text-transform: none; letter-spacing: 0.04em; }
+  .eyebrow sub { font-size: 0.8em; vertical-align: -0.15em; }
+
+  .col { position: absolute; top: 16px; bottom: 90px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; pointer-events: none; }
+  .col::-webkit-scrollbar { display: none; }
+  .col > * { pointer-events: auto; flex: none; }
+  #left { left: 18px; width: 372px; }
+  #right { right: 18px; width: 392px; }
+  h1 { margin: 0; font: 700 26px/1.04 var(--display); letter-spacing: 0.01em; text-wrap: balance; }
+  h1 span { display: block; font-weight: 500; font-size: 11px; letter-spacing: 0.24em; color: var(--muted); margin-bottom: 7px; }
+  .lede { margin: 0; color: #c2c9d6; font-size: 13.5px; max-width: 44ch; }
+  #readouts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+  .ro { padding: 6px 8px 7px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); min-width: 0; }
+  .ro .eyebrow { font-size: 9px; display: block; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.08em; }
+  .ro b { font: 500 14.5px/1 var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .ro small { font: 400 10px var(--mono); color: var(--muted); margin-left: 2px; }
+  #story { padding: 11px 13px; font-size: 13px; color: #d5dbe5; }
+  #story p { margin: 0; min-height: 5.8em; }
+  #story .phase { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  #story .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+  .k-a { color: var(--amber); font-weight: 600; } .k-b { color: var(--ice); font-weight: 600; }
+  .k-p { color: var(--proton); font-weight: 600; } .k-n { color: var(--neutron); font-weight: 600; }
+  .k-num { font-family: var(--mono); font-size: 0.93em; color: #fff; }
+  #warn { font-size: 12px; color: var(--warn); margin-top: 8px; }
+
+  #deck { padding: 13px; display: grid; gap: 12px; }
+  .row { display: grid; gap: 7px; }
+  .row-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .pills { display: flex; flex-wrap: wrap; gap: 5px; }
+  .pill { border: 1px solid var(--line); background: transparent; border-radius: 8px; padding: 5px 9px; cursor: pointer; font-size: 12.5px; color: #cfd6e2; }
+  .pill:hover { border-color: var(--line-strong); }
+  .pill[aria-pressed="true"] { background: #e8f4ff; color: #0b1320; border-color: #e8f4ff; font-weight: 600; }
+  .pill small { font-family: var(--mono); font-size: 10.5px; opacity: 0.7; margin-left: 4px; }
+  .val { font: 500 18px/1 var(--mono); font-variant-numeric: tabular-nums; }
+  .val small { font-size: 11.5px; color: var(--muted); }
+  input[type=range] { width: 100%; accent-color: var(--amber); margin: 2px 0; }
+  .tools { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .icon-btn { border: 1px solid var(--line); background: transparent; border-radius: 8px; padding: 5px 10px; cursor: pointer; font-size: 12.5px; color: #cfd6e2; }
+  .icon-btn:hover { border-color: var(--line-strong); }
+  .sysnote { font-size: 12px; color: var(--muted); margin: 0; }
+  select, .txt { background: rgba(255,255,255,0.04); border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; font-size: 12.5px; }
+  select option { background: #0e1118; }
+  .custom { display: grid; grid-template-columns: 1fr auto 1fr auto; gap: 6px; align-items: center; }
+  .custom .txt { width: 100%; box-sizing: border-box; font-family: var(--mono); }
+
+  .card { padding: 9px 11px 9px; margin: 0; }
+  .card header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; gap: 8px; }
+  .card header .val2 { font: 400 11px var(--mono); color: var(--muted); white-space: nowrap; }
+  .card canvas { display: block; width: 100%; height: auto; border-radius: 6px; }
+  .card figcaption { font-size: 11px; color: var(--muted); margin-top: 5px; line-height: 1.35; }
+  #orbitMap { cursor: ns-resize; }
+  .tabs { display: flex; gap: 4px; }
+  .tabs .pill { padding: 3px 8px; font-size: 11.5px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; font: 400 10.5px var(--mono); color: var(--muted); margin-top: 5px; }
+  .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+  #tip { position: fixed; pointer-events: none; z-index: 10; font: 400 11.5px/1.35 var(--mono); padding: 6px 8px; border-radius: 7px; background: rgba(8,10,15,0.94); border: 1px solid var(--line-strong); color: var(--text); max-width: 260px; }
+
+  #timeline { position: absolute; left: 18px; right: 18px; bottom: 16px; height: 58px; display: grid; grid-template-columns: auto auto 1fr auto; gap: 12px; align-items: center; padding: 0 14px; }
+  #play { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line-strong); background: #e8f4ff; color: #0b1320; cursor: pointer; display: grid; place-items: center; font-size: 12px; }
+  #speed { font: 400 11px var(--mono); }
+  #scrub { position: relative; height: 40px; cursor: pointer; touch-action: none; }
+  #scrub .track { position: absolute; left: 0; right: 0; top: 13px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.08); overflow: hidden; }
+  #scrub .fill { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, var(--amber), #ffe2b0); }
+  #scrub .contact { position: absolute; top: 11px; height: 8px; border-radius: 3px; background: rgba(255,122,102,0.35); }
+  #scrub .knob { position: absolute; top: 7px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 3px rgba(255,177,74,0.35); }
+  #scrub .mark { position: absolute; top: 24px; transform: translateX(-50%); font: 400 10px var(--mono); color: var(--muted); white-space: nowrap; padding-top: 3px; }
+  #tval { font: 500 13px/1.2 var(--mono); text-align: right; font-variant-numeric: tabular-nums; min-width: 128px; }
+  #tval small { display: block; font-size: 10.5px; color: var(--muted); font-weight: 400; }
+  #labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .lab { position: absolute; transform: translate(-50%, -100%); font: 500 10.5px var(--mono); color: #dfe6f0; white-space: nowrap; padding: 3px 7px; border-radius: 6px; background: rgba(10,13,19,0.72); border: 1px solid var(--line); transition: opacity .25s; }
+  #busy { position: absolute; left: 50%; top: 18px; transform: translateX(-50%); font: 400 11px var(--mono); color: var(--muted); padding: 5px 10px; border-radius: 20px; }
+
+  dialog { max-width: 760px; width: calc(100% - 32px); max-height: 86vh; background: var(--panel-solid); color: var(--text); border: 1px solid var(--line-strong); border-radius: 16px; padding: 0; }
+  dialog::backdrop { background: rgba(3,5,8,0.66); backdrop-filter: blur(3px); }
+  dialog .inner { padding: 22px 26px 26px; overflow: auto; max-height: 86vh; box-sizing: border-box; }
+  dialog h2 { font: 700 20px/1.2 var(--display); margin: 0 0 12px; }
+  dialog h3 { font: 500 11px var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin: 20px 0 6px; }
+  dialog p { margin: 0 0 8px; color: #cdd4df; max-width: 68ch; }
+  dialog ol, dialog ul { padding-left: 20px; color: #cdd4df; font-size: 12.5px; } dialog li { margin: 3px 0; }
+  dialog a { color: var(--accent); }
+  dialog .close { position: sticky; top: 0; float: right; border: 0; background: transparent; font-size: 22px; cursor: pointer; color: var(--muted); }
+  .cat { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .cat th, .cat td { text-align: left; padding: 5px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .cat th { font: 500 10px var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); position: sticky; top: 0; background: var(--panel-solid); }
+  .cat tr.pick { cursor: pointer; } .cat tr.pick:hover td { background: rgba(168,220,255,0.06); }
+  .cat td.sys { font-family: var(--mono); white-space: nowrap; }
+  .tablewrap { overflow-x: auto; }
+
+  @media (max-width: 1100px) {
+    body { overflow: auto; }
+    #app { height: auto; display: flex; flex-direction: column; gap: 12px; padding: 0 16px 24px; }
+    #stage { position: relative; height: 54vh; min-height: 320px; margin: 0 -16px; }
+    .col { display: contents; }
+    #left h1 { order: 0; padding-top: 14px; } .lede { order: 1; }
+    #stage { order: 2; } #timeline { order: 3; } #readouts { order: 4; } #story { order: 5; }
+    #deck { order: 6; } #cardOrbit { order: 7; } #cardChart { order: 8; } #cardDefl { order: 9; }
+    #timeline { position: static; grid-template-columns: auto 1fr; height: auto; padding: 8px 12px; row-gap: 2px; } #speed { display: none; }
+    #tval { grid-column: 1 / -1; text-align: left; } #tval small { display: inline; margin-left: 8px; }
+    #busy { top: auto; bottom: 8px; }
+  }
+  @media (max-width: 420px) { #readouts { grid-template-columns: repeat(2, 1fr); } h1 { font-size: 23px; } }
+  @media (prefers-reduced-motion: reduce) { .lab { transition: none; } }
+</style>
+
+<div id="app">
+  <div id="stage" aria-label="3D view of the two nuclei in the reaction plane"></div>
+  <div id="labels" aria-hidden="true"></div>
+
+  <section id="left" class="col">
+    <h1><span>MULTI-NUCLEON TRANSFER</span>The Nucleon Exchange</h1>
+    <p class="lede">Just above the Coulomb barrier, two heavy nuclei touch for a few zeptoseconds. Nucleons flow through the neck between them, and new isotopes fly apart.</p>
+    <div id="readouts">
+      <div class="ro"><span class="eyebrow nt">E<sub>cm</sub>/V<sub>B</sub></span><b id="r-e">–</b></div>
+      <div class="ro"><span class="eyebrow nt">ℓ</span><b id="r-l">–</b><small>ħ</small></div>
+      <div class="ro"><span class="eyebrow nt">b</span><b id="r-b">–</b><small>fm</small></div>
+      <div class="ro"><span class="eyebrow nt">θ<sub>cm</sub></span><b id="r-th">–</b><small>°</small></div>
+      <div class="ro"><span class="eyebrow">TKEL</span><b id="r-tkel">–</b><small>MeV</small></div>
+      <div class="ro"><span class="eyebrow">Contact</span><b id="r-tc">–</b><small>zs</small></div>
+      <div class="ro"><span class="eyebrow nt">⟨ΔZ⟩ ⟨ΔN⟩</span><b id="r-dzn">–</b></div>
+      <div class="ro"><span class="eyebrow nt">σ<sub>capture</sub></span><b id="r-cap">–</b><small>mb</small></div>
+    </div>
+    <div id="story" class="panel" aria-live="polite">
+      <div class="phase"><span class="dot" id="phaseDot"></span><span class="eyebrow" id="phaseName">Loading</span></div>
+      <p id="storyText">Loading the nuclide table…</p>
+      <div id="warn" hidden></div>
+    </div>
+    <figure class="card panel" id="cardOrbit">
+      <header><span class="eyebrow">Orbits for every ℓ</span><span class="val2" id="orbitVal"></span></header>
+      <canvas id="orbitMap" width="700" height="440" aria-label="Relative orbits of the projectile around the target for all angular momenta; drag vertically to choose one"></canvas>
+      <div class="legend"><span><i style="background:#8d97a9"></i>Rutherford</span><span><i style="background:#7cc4ff"></i>quasi-elastic</span><span><i style="background:#ffb14a"></i>deep-inelastic</span><span><i style="background:#ff7a66"></i>captured</span></div>
+      <figcaption>Target at the centre, projectile coming from the left. Drag up or down to pick the angular momentum ℓ (impact parameter b = ℓ/k).</figcaption>
+    </figure>
+  </section>
+
+  <section id="right" class="col">
+    <div id="deck" class="panel">
+      <div class="row">
+        <div class="row-head"><span class="eyebrow">Reaction</span><span class="eyebrow nt" id="sysMeta"></span></div>
+        <div class="pills" id="systems" role="group" aria-label="Reactions with measured data"></div>
+        <div class="custom">
+          <input class="txt" id="projIn" aria-label="Projectile" placeholder="136Xe">
+          <span class="eyebrow">+</span>
+          <input class="txt" id="targIn" aria-label="Target" placeholder="208Pb">
+          <button class="icon-btn" id="goCustom">Go</button>
+        </div>
+        <div class="tools"><button class="icon-btn" id="openCat">All reactions in the literature (<span id="catN">–</span>)</button><button class="icon-btn" id="help">How it works</button></div>
+        <p class="sysnote" id="sysNote"></p>
+      </div>
+      <div class="row">
+        <div class="row-head"><label class="eyebrow" for="eSlider">Beam energy</label><span class="val" id="eVal">– <small>MeV</small></span></div>
+        <input id="eSlider" type="range" min="0.9" max="2.0" step="0.005" value="1.2">
+        <div class="pills" id="energies" role="group" aria-label="Measured beam energies"></div>
+      </div>
+      <div class="row">
+        <div class="row-head"><label class="eyebrow" for="lSlider">Angular momentum ℓ</label><span class="val" id="lVal">– <small>ħ</small></span></div>
+        <input id="lSlider" type="range" min="0" max="300" step="1" value="100">
+      </div>
+    </div>
+    <figure class="card panel" id="cardChart">
+      <header><span class="eyebrow">Products on the nuclide chart</span>
+        <span class="tabs" role="group" aria-label="Product stage"><button class="pill" data-stage="final" aria-pressed="true">After evaporation</button><button class="pill" data-stage="primary" aria-pressed="false">Primary</button></span></header>
+      <canvas id="chart" width="760" height="520" aria-label="Nuclide chart with model cross sections and measured values"></canvas>
+      <div class="legend" id="chartLegend"></div>
+      <figcaption id="chartCap">Colour: model cross section. Rings: measured cross sections, coloured by model/data.</figcaption>
+    </figure>
+    <figure class="card panel" id="cardDefl">
+      <header><span class="eyebrow" id="deflTitle">Deflection function</span>
+        <span class="tabs" role="group" aria-label="Plot"><button class="pill" data-plot="defl" aria-pressed="true">Θ(ℓ)</button><button class="pill" data-plot="wil" aria-pressed="false">Wilczyński</button><button class="pill" data-plot="data" aria-pressed="false">Data</button></span></header>
+      <canvas id="defl" width="760" height="420" aria-label="Deflection function, Wilczyński plot or data comparison"></canvas>
+      <figcaption id="deflCap"></figcaption>
+    </figure>
+  </section>
+
+  <div id="timeline" class="panel">
+    <button id="play" aria-label="Play">▶</button>
+    <button class="icon-btn" id="speed" title="Playback speed">1×</button>
+    <div id="scrub" role="slider" aria-label="Time" tabindex="0" aria-valuemin="0" aria-valuemax="1000" aria-valuenow="0">
+      <div class="track"><div class="fill" id="scrubFill"></div></div>
+      <div class="contact" id="scrubContact"></div>
+      <div class="knob" id="scrubKnob"></div>
+      <div id="marks"></div>
+    </div>
+    <div id="tval">–</div>
+  </div>
+  <div id="busy" class="panel" hidden>computing…</div>
+  <div id="tip" hidden></div>
+</div>
+
+<dialog id="explainer"><div class="inner"><button class="close" data-close aria-label="Close">×</button><h2>How it works</h2><div id="explainerBody"></div></div></dialog>
+<dialog id="catalogue"><div class="inner"><button class="close" data-close aria-label="Close">×</button><h2>Measured reactions</h2>
+  <p>Every multi-nucleon-transfer and deep-inelastic experiment we could verify in the literature (docs/mnt/02-measured-reactions.md). Rows with numbers in EXFOR are compared with the model; click a row to load the reaction.</p>
+  <div class="tablewrap"><table class="cat" id="catTable"></table></div></div></dialog>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
+} }
+</script>
+<script type="module" src="src/main.js"></script>

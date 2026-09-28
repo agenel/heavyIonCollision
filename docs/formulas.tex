@@ -1,0 +1,651 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{amsmath,amssymb,booktabs,array}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\newcommand{\file}[1]{\texttt{\small #1}}
+\newcommand{\src}[1]{\hfill{\small\color{gray}[#1]}}
+\newcommand{\emp}{\textsuperscript{\color{orange!80!black}\textbf{E}}}
+\newcommand{\vis}{\textsuperscript{\color{blue!70!black}\textbf{V}}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+\sloppy
+
+\title{Heavy-Ion Collision Animation\\[2pt]\large Every formula used in the code}
+\author{heavyIonCollision project}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\noindent This document lists every formula the software evaluates, in the order of the pipeline:
+geometry $\to$ initial state $\to$ fireball $\to$ hadrons $\to$ scene. Each block names the file that implements it
+and the literature source (full references in \file{docs/physics/01--04}).
+Two markers flag what is \emph{not} textbook physics:
+\emp~= empirical or calibration choice made in this project (tuned so that the output matches data, see
+\file{docs/validation.md});
+\vis~= purely visual mapping (does not affect any physical number).
+
+\textbf{Units.} Natural units $\hbar=c=k_B=1$ unless stated: lengths in fm, times in fm/$c$, energies and momenta in GeV,
+temperatures in MeV where noted.
+\begin{gather*}
+\hbar c = 0.1973269804~\text{GeV fm},\qquad 1~\text{fm}/c = 3.33564\times10^{-24}~\text{s},\\
+m_p = 0.93827208943~\text{GeV},\quad m_n = 0.93956542194~\text{GeV},\quad m_N = \tfrac12(m_p+m_n).
+\end{gather*}
+\src{\file{hic\_core/constants.py}; PDG 2024}
+
+\tableofcontents
+\newpage
+
+%=====================================================================
+\section{Beam kinematics}\label{sec:kin}
+\src{\file{hic\_core/kinematics.py}}
+
+Lorentz factor, velocity and beam rapidity of a nucleon in the collider (centre-of-mass) frame:
+\begin{equation}
+\gamma = \frac{\sqrt{s_{NN}}}{2m_N},\qquad \beta = \sqrt{1-\gamma^{-2}},\qquad y_\text{beam} = \operatorname{arccosh}\gamma .
+\end{equation}
+Longitudinal thickness of a contracted nucleus and the time the two discs need to cross:
+\begin{equation}
+L_z = \frac{2R}{\gamma},\qquad t_\text{cross} = \frac{L_z}{\beta}.
+\end{equation}
+Inelastic nucleon--nucleon cross section: tabulated value when $\sqrt{s_{NN}}$ is within 1\% of a preset
+(PHENIX PRC 93 024901; Loizides et al.), otherwise the fit of d'Enterria \& Loizides
+(arXiv:2011.14909), with $s$ in GeV$^2$:
+\begin{equation}
+\sigma^\text{inel}_{NN}(s) = a + b\,\ln^{n}\! s,\qquad a = 28.84~\text{mb},\; b = 0.0458~\text{mb},\; n = 2.374 .
+\end{equation}
+Black-disk interaction distance ($1~\text{mb} = 0.1~\text{fm}^2$):
+\begin{equation}
+D = \sqrt{\sigma^\text{inel}_{NN}/\pi}.
+\end{equation}
+Milne coordinates (proper time and space-time rapidity) and their inverse:
+\begin{equation}
+\tau = \sqrt{t^2-z^2},\quad \eta_s = \operatorname{artanh}\frac{z}{t};\qquad t = \tau\cosh\eta_s,\quad z = \tau\sinh\eta_s .
+\end{equation}
+
+%=====================================================================
+\section{Nuclear density and nucleon sampling}
+\src{\file{hic\_core/nuclei.py}; arXiv:1408.2549; arXiv:1710.07098}
+
+\subsection{Woods--Saxon (2pF / 3pF) with deformation}
+\begin{equation}
+\frac{\rho(r,\theta)}{\rho_0} = \frac{1 + w\,r^2/R^2}{1+\exp\!\big[(r-R(\theta))/a\big]},\qquad
+R(\theta) = R\big[1+\beta_2 Y_{20}(\theta)+\beta_4 Y_{40}(\theta)\big],
+\end{equation}
+\begin{equation}
+Y_{20} = \sqrt{\tfrac{5}{16\pi}}\,(3\cos^2\theta-1),\qquad
+Y_{40} = \tfrac{3}{16\sqrt{\pi}}\,(35\cos^4\theta-30\cos^2\theta+3).
+\end{equation}
+Parameters $(R,a,w,\beta_2,\beta_4)$ per nucleus are in \file{hic\_core/data/nuclei.json}. For $^{208}$Pb, protons and neutrons
+are drawn from separate profiles (neutron skin): $(R_p,a_p)=(6.68,0.447)$, $(R_n,a_n)=(6.69,0.560)$ fm.
+
+\subsection{Sampling}
+Radius and polar angle by rejection from $r^2\rho(r,\cos\theta)$ on $r\in[0,r_\text{max}]$,
+$\cos\theta\in[-1,1]$, azimuth uniform:
+\begin{equation}
+r_\text{max} = R\,(1+0.7|\beta_2|+0.4|\beta_4|) + 10a,\qquad
+\text{envelope} = 1.05\,\max\!\big[r^2\rho\big]\ \text{(on a }400\times41\text{ grid)}.
+\end{equation}
+Hard-core condition: a candidate is rejected if $|\vec x - \vec x_j| < d_\text{min}$ for any placed nucleon $j$
+(default $d_\text{min}=0.4$ fm). Afterwards the nucleus is recentred, $\vec x_i \to \vec x_i - \langle\vec x\rangle$.
+
+\textbf{Orientation} of deformed nuclei (symmetry axis initially along $z$): random = uniform rotation from a unit
+quaternion $q=(w,x,y,z)$, $q\sim\mathcal N(0,1)^4/\lVert\cdot\rVert$,
+\begin{equation}
+\mathsf R(q) = \begin{pmatrix}
+1-2(y^2+z^2) & 2(xy-zw) & 2(xz+yw)\\
+2(xy+zw) & 1-2(x^2+z^2) & 2(yz-xw)\\
+2(xz-yw) & 2(yz+xw) & 1-2(x^2+y^2)\end{pmatrix};
+\end{equation}
+tip-tip $=\mathbb 1$; body-body ($z\to y$) and body-body along $b$ ($z\to x$):
+\begin{equation}
+\mathsf R_\text{bb} = \begin{pmatrix}1&0&0\\0&0&1\\0&-1&0\end{pmatrix},\qquad
+\mathsf R_\text{bb,x} = \begin{pmatrix}0&0&1\\0&1&0\\-1&0&0\end{pmatrix}.
+\end{equation}
+
+\subsection{Light nuclei}
+Deuteron (Hulth\'en wave function, $a=0.228$ fm$^{-1}$, $b=1.18$ fm$^{-1}$): proton--neutron separation $r$ from
+\begin{equation}
+P(r)\,dr \propto \big(e^{-ar}-e^{-br}\big)^2 dr,\quad r\in[0,20]~\text{fm};\qquad
+\vec x_{p,n} = \pm\tfrac{r}{2}\,\hat n,\ \hat n \text{ isotropic}.
+\end{equation}
+$^3$He (approximation\emp; published MCs use GFMC configurations): Gaussian with the charge radius
+$r_\text{rms}=1.966$ fm,
+\begin{equation}
+x,y,z \sim \mathcal N\!\big(0,\ \sigma^2\big),\quad \sigma = r_\text{rms}/\sqrt3 .
+\end{equation}
+
+%=====================================================================
+\section{Monte Carlo Glauber model}
+\src{\file{hic\_core/glauber.py}; Miller et al.\ Ann.\ Rev.\ 57 (2007) 205; LKD18}
+
+Impact parameter ($\mathrm dN/\mathrm db\propto b$) and the shift of the nuclei:
+\begin{equation}
+b = b_\text{max}\sqrt{U},\ U\sim\mathcal U(0,1),\quad b_\text{max} = 1.2(R_A+R_B)+6~\text{fm};\qquad
+x_A \to x_A - \tfrac b2,\quad x_B\to x_B+\tfrac b2 .
+\end{equation}
+Collision criterion for a pair with transverse distance $d_{ij}$: black disk, or the Gaussian profile of LKD18 App.~B
+($Q$ = regularised upper incomplete gamma function, Sec.~\ref{sec:special}):
+\begin{equation}
+P_\text{coll} = \Theta(D^2-d_{ij}^2)\qquad\text{or}\qquad
+P_\text{coll} = Q\!\left(\frac1\omega,\ \frac{d_{ij}^2}{D^2\omega}\right),\ \omega=0.4 .
+\end{equation}
+\begin{gather}
+N_\text{coll} = \sum_{i\in A,j\in B}\text{hit}_{ij},\qquad N_\text{spec} = A+B-N_\text{part},\nonumber\\
+N_\text{part} = \#\{i: \textstyle\sum_j \text{hit}_{ij}>0\} + \#\{j: \textstyle\sum_i \text{hit}_{ij}>0\}.
+\end{gather}
+Participant eccentricities and event-plane angles ($r^n$ weighting, TGlauberMC/LKD18 convention; positions relative to
+the participant centroid):
+\begin{equation}
+\varepsilon_n = \frac{\big|\langle r^n e^{in\phi}\rangle\big|}{\langle r^n\rangle},\qquad
+\Psi_n = \frac{\operatorname{atan2}\!\big(\langle r^n\sin n\phi\rangle,\langle r^n\cos n\phi\rangle\big)+\pi}{n}.
+\end{equation}
+Overlap area:
+\begin{equation}
+S = 4\pi\sqrt{\sigma_x^2\sigma_y^2-\sigma_{xy}^2}.
+\end{equation}
+Hadronic cross section from the Monte Carlo and centrality from impact parameter:
+\begin{equation}
+\sigma_{AB} = \pi b_\text{max}^2\,\frac{N_\text{inel}}{N_\text{events}},\qquad
+[b_\text{lo},b_\text{hi}](c_1,c_2) = \big[\,Q_b(c_1),\,Q_b(c_2)\,\big],
+\end{equation}
+where $Q_b(c)$ is the $c$-quantile of $b$ among inelastic events (LKD18 tables are used directly where available).
+For a given $b$ without a table\emp: $c \simeq 100\,\pi b^2/\sigma_{AB}$ (\%), $\sigma_{AB}=700$ fm$^2$ if unknown.
+
+%=====================================================================
+\section{Initial entropy (TRENTo)}
+\src{\file{hic\_core/fireball.py}; PRC 92 (2015) 011901; Nature Phys.\ 15 (2019) 1113}
+
+Participant thickness with Gaussian nucleons of width $w$ and $\Gamma$-distributed weights ($k$ = shape):
+\begin{equation}
+T_{A}(x,y) = \sum_{i\in\text{part}(A)} \gamma_i\,\frac{1}{2\pi w^2}\,
+\exp\!\left[-\frac{(x-x_i)^2+(y-y_i)^2}{2w^2}\right],\qquad \gamma_i\sim\Gamma(k,1/k).
+\end{equation}
+Reduced thickness:
+\begin{equation}
+T_R(p;T_A,T_B) = \left(\frac{T_A^p+T_B^p}{2}\right)^{1/p},\qquad T_R(0) = \sqrt{T_AT_B}.
+\end{equation}
+Defaults (Bayesian calibration): $p=0$, $w=0.96$ fm, $k=1/\sigma_\text{fluct}^2 = 1.23$. Grid: $96\times96$ cells over
+$[-16,16]$ fm.
+Normalisation to the measured multiplicity via the entropy per charged hadron
+(Hanus, Mazeliauskas, Reygers PRC 100 (2019) 064903):
+\begin{equation}
+\frac{\mathrm dS}{\mathrm d\eta} = \frac{S}{N_\text{ch}}\,\frac{\mathrm dN_\text{ch}}{\mathrm d\eta}\Big|_{\eta=0},
+\quad \frac{S}{N_\text{ch}} = 6.7;\qquad
+s_0(x,y) = \frac{\mathrm dS/\mathrm d\eta}{\tau_0\,\Delta x^2\sum T_R}\;T_R(x,y).
+\end{equation}
+
+\subsection{Multiplicity for systems without their own table\emp}
+\src{\file{hic\_core/event.py}, \file{scripts/calibrate\_trento\_norm.py}}
+\begin{equation}
+I = \Delta x^2\sum_{x,y} T_R,\qquad
+\mathcal N_\text{ref}(c) = \frac{\langle \mathrm dN_\text{ch}/\mathrm d\eta\rangle_c}{\langle I\rangle_c},\qquad
+\frac{\mathrm dN_\text{ch}}{\mathrm d\eta} = \overline{\mathcal N}_\text{ref}\; I\;
+\left(\frac{\sqrt{s_{NN}}}{\sqrt{s_\text{ref}}}\right)^{0.31},
+\end{equation}
+with $\overline{\mathcal N}_\text{ref}$ the mean over reference bins with $c\le60\%$ (Pb--Pb 2.76/5.02 TeV, Au--Au 200 GeV)
+and the exponent from $\mathrm dN_\text{ch}/\mathrm d\eta\propto s^{0.155}$ (ALICE PRL 116 (2016) 222302).
+
+%=====================================================================
+\section{Equation of state (lattice QCD)}
+\src{\file{hic\_core/eos.py}; HotQCD PRD 90 (2014) 094503, PLB 795 (2019) 15}
+
+From the tabulated dimensionless ratios ($T$ in GeV inside the powers):
+\begin{equation}
+\varepsilon(T) = \Big[\frac{\varepsilon}{T^4}\Big](T)\,\frac{T^4}{(\hbar c)^3},\quad
+p(T) = \Big[\frac{p}{T^4}\Big](T)\,\frac{T^4}{(\hbar c)^3},\quad
+s(T) = \Big[\frac{s}{T^3}\Big](T)\,\frac{T^3}{(\hbar c)^3},\quad c_s^2(T).
+\end{equation}
+$\varepsilon/T^4$ is interpolated linearly in $\ln T$; below 130 MeV it is held at 2.33 (display extrapolation\emp), above
+400 MeV at 13.34. The inverse $T(\varepsilon)$ is a log--log interpolation of the same table.
+$T_c = 156.5$ MeV. Phase bands of the table: hadron gas $T<145$, crossover $145\le T\le163$, QGP $T>163$ MeV.
+
+%=====================================================================
+\section{Fireball evolution (Level A)}
+\src{\file{hic\_core/fireball.py}}
+
+\subsection{Longitudinal profile}
+Boost-invariant in shape, Gaussian in space-time rapidity, cut at the beam rapidity:
+\begin{equation}
+s(\tau,x,y,\eta_s) = f(\eta_s)\,s_{2D}(\tau,x,y),\qquad
+f(\eta_s) = e^{-\eta_s^2/2\sigma_\eta^2}\,\Theta(y_\text{beam}-|\eta_s|),
+\end{equation}
+\begin{equation}
+\sigma_\eta = \sqrt{\max(\sigma_y^2-0.8^2,\,1)}\emp,\qquad
+\sigma_y = \begin{cases} 3.86 & \text{LHC (ALICE PLB 726 610)}\\ \text{FWHM}/2.3548 & \text{RHIC (PHOBOS)}\end{cases}
+\end{equation}
+where $0.8$ removes the thermal smearing between $\eta_s$ and rapidity.
+
+\subsection{Transverse expansion}
+Entropy conservation of an ideal fluid in Milne coordinates with a prescribed velocity field $\vec v(\tau,x,y)$, plus a
+small diffusion\emp{} ($D = 0.15$ fm):
+\begin{equation}
+\partial_\tau q + \nabla_\perp\!\cdot(q\,\vec v) = D\,\nabla_\perp^2 q,\qquad q = \tau\,s\,\gamma_\perp,\quad
+\gamma_\perp = (1-v^2)^{-1/2}.
+\end{equation}
+Discretisation: donor-cell upwind flux at cell faces, $u_{i+1/2} = \tfrac12(v_i+v_{i+1})$,
+\begin{equation}
+F_{i+1/2} = \begin{cases} q_i\,u_{i+1/2} & u_{i+1/2}>0\\ q_{i+1}\,u_{i+1/2} & \text{otherwise}\end{cases},\quad
+q_i^{n+1} = q_i^n - \frac{\Delta\tau}{\Delta x}\big(F_{i+1/2}-F_{i-1/2}\big) + \Delta\tau\,D\,(\nabla^2 q)_i,
+\end{equation}
+$(\nabla^2 q)_{ij} = (q_{i+1,j}+q_{i-1,j}+q_{i,j+1}+q_{i,j-1}-4q_{ij})/\Delta x^2$;
+$\Delta\tau = \min(0.02,\ 0.9\Delta x/\beta_s)$ fm/$c$; open boundary ($q=0$ on the edge); snapshots every 0.1 fm/$c$.
+Before $\tau_0$ (display only): $s_{2D}(\tau<\tau_0) = s_0\,\tau_0/\tau$.
+
+\subsection{Flow field}
+Surface velocity from the blast-wave fit ($\langle\beta_T\rangle = 2\beta_s/(2+n)$, Schnedermann--Sollfrank--Heinz),
+with a calibrated gain $g$\emp{} (Sec.~\ref{sec:calib}) and a build-up time:
+\begin{gather}
+\beta_s = \min\!\Big(\langle\beta_T\rangle\frac{2+n}{2}\,g,\ 0.97\Big),\qquad
+v_s(\tau) = \beta_s\tanh\frac{\max(\tau-\tau_0,0)}{\tau_\text{acc}},\nonumber\\
+\tau_\text{acc} = \tau^{(0)}_\text{acc}\,\max\!\Big(\frac{R_0}{6.5~\text{fm}},0.2\Big)^{1.5}\emp,\qquad \tau^{(0)}_\text{acc} = 2.5~\text{fm}/c .
+\end{gather}
+Flow radius, chosen so that the entropy-weighted mean of $(r/R)^n$ equals the uniform-disk blast-wave value $2/(2+n)$:
+\begin{equation}
+R(\tau) = \left[\frac{2+n}{2}\,\frac{\sum s\,r^n}{\sum s}\right]^{1/n}.
+\end{equation}
+Entropy-field eccentricities (around the entropy centroid), used for the anisotropic radius:
+\begin{equation}
+\varepsilon_n^{(s)} = \frac{\big|\sum s\,r^n e^{in\phi}\big|}{\sum s\,r^n},\qquad
+\Psi_n^{(s)} = \frac{\operatorname{atan2}(\sum s r^n\sin n\phi,\sum s r^n\cos n\phi)+\pi}{n},
+\end{equation}
+\begin{equation}
+R(\phi) = R\Big[1-\tfrac12\varepsilon_2\cos2(\phi-\Psi_2)-\tfrac12\varepsilon_3\cos3(\phi-\Psi_3)\Big].
+\end{equation}
+Velocity (radial direction $\hat r$), with the azimuthal modulation of the transverse flow rapidity\emp{} that produces
+$v_n$ (amplitudes $a_n$ calibrated, Sec.~\ref{sec:calib}):
+\begin{gather}
+|\vec v|_0 = v_s(\tau)\,\min\!\Big(\frac{r}{R(\phi)},1\Big)^{n},\nonumber\\
+|\vec v| = \tanh\!\Big[\operatorname{artanh}\big(\min(|\vec v|_0,0.99)\big)\,
+\operatorname{clip}\Big(1+2\sum_{m=2}^4 a_m\cos m(\phi-\Psi_m),\,0.05,\,3\Big)\Big].
+\end{gather}
+
+\subsection{Temperature}
+From the lattice entropy density, $s(T)$ tabulated on $T\in[20,1200]$ MeV (with $s/T^3$ clamped to its 130--400 MeV
+values) and inverted by interpolation in $\ln s$; $T=0$ below the grid:
+\begin{equation}
+T(\tau,x,y,\eta_s) = s^{-1}\!\big(f(\eta_s)\,s_{2D}(\tau,x,y)\big).
+\end{equation}
+Lab-frame field at time $t$: $\tau=\sqrt{t^2-z^2}$, $\eta_s=\operatorname{artanh}(z/t)$, zero outside $|z|<t$.
+QGP entropy fraction and the end of the QGP phase:
+\begin{equation}
+F_\text{QGP}(\tau) = \frac{\sum s\,\Theta(T-T_c)}{\sum s},\qquad \tau_\text{QGP} = \min\{\tau: F_\text{QGP}(\tau)<0.1\}.
+\end{equation}
+
+%=====================================================================
+\section{Hadrons: formation, freeze-out and emission}
+\src{\file{hic\_core/event.py}, \file{hic\_core/freezeout.py}}
+
+\subsection{Number and species}
+Total number of hadrons (all species, all rapidities) from entropy conservation:
+\begin{equation}
+N_\text{had} = \frac{\mathrm dS/\mathrm d\eta \int f(\eta_s)\,\mathrm d\eta_s}{(S/N_\text{ch})\,f_\text{ch}\,J},\qquad
+J = \frac{N_\text{ch}(|\eta|<0.5)}{N_\text{ch}(|\eta_s|<0.5)},
+\end{equation}
+$f_\text{ch}$ = charged fraction of the species mix, $J$ = pseudorapidity Jacobian from a $2\times10^4$-particle
+blast-wave pre-sample ($v = \beta_s\,r^n$, $r=\sqrt U$, $\eta_s\sim\mathcal U(-1.5,1.5)$).
+Species fractions from measured $\mathrm dN/\mathrm dy$ (ALICE, STAR; \file{data/yields.json}), neutral partners by
+isospin and antibaryons from $r=\bar p/p$ (interpolated in $\ln\sqrt{s_{NN}}$):
+\begin{equation}
+\pi^0 = \tfrac12(\pi^++\pi^-),\quad K^0 = K^++K^-,\quad n=p,\quad \bar n=\bar p,\quad
+\Lambda = \Big(\frac{\Lambda}{\pi}\Big)\pi^+,
+\end{equation}
+\begin{equation}
+\bar\Lambda = \Lambda\,r^{2/3},\quad \bar\Xi^+ = \Xi^-\,r^{1/3},\quad \bar\Omega^+ = \Omega^-,\quad \bar d = d\,r^2 .
+\end{equation}
+
+\subsection{Fluid tracers}
+Initial positions drawn $\propto s_0(x,y)$ (cell + uniform offset), $\eta_s\sim\mathcal N(0,\sigma_\eta^2)$ truncated at
+$y_\text{beam}$. Midpoint (RK2) advection with the flow plus the random walk equivalent to the diffusion term:
+\begin{equation}
+\vec x_{k+1} = \vec x_k + \Delta\tau\,\vec v\big(\tau_k+\tfrac{\Delta\tau}2,\ \vec x_k+\tfrac{\Delta\tau}2\vec v(\tau_k,\vec x_k)\big)
++ \sqrt{2D\Delta\tau}\;\vec\xi,\qquad \vec\xi\sim\mathcal N(0,\mathbb 1).
+\end{equation}
+Hadronisation and kinetic freeze-out proper times of each tracer:
+\begin{equation}
+\tau_c = \min\{\tau_k: T<T_c\},\qquad \tau_{f,T} = \min\{\tau_k: T<T_\text{kin}\},
+\end{equation}
+\begin{equation}
+\tau_f = \max\!\Big(\tau_c,\ \min\big(\tau_{f,T},\ \tau_c+\tau_\text{had},\ \tau_\text{end}\big)\Big),\qquad
+\tau_\text{had} = \max\!\Big(\tau_\text{had}^{(0)}\min\big(\tfrac{R_0}{6.5},1\big),\,0.5\Big)\emp,
+\end{equation}
+$\tau_\text{had}^{(0)} = 4.5$ fm/$c$ (ALICE K$^*$/K: 4--7 fm/$c$). Freeze-out point in the lab:
+$t_f = \tau_f\cosh\eta_s$, $z_f = \tau_f\sinh\eta_s$, transverse position $\vec x_f$ and flow $\vec v_f=\vec v(\tau_f,\vec x_f)$.
+
+\subsection{Cooper--Frye / blast-wave emission}
+Momentum in the local rest frame (Boltzmann, isochronous surface):
+\begin{equation}
+\frac{\mathrm dN}{\mathrm dp} \propto p^2E\,e^{-E/T_\text{kin}},\qquad E=\sqrt{p^2+m^2},\quad \hat p\ \text{isotropic}.
+\end{equation}
+Sampling: kinetic energy $K=E-m$ from the envelope $E^2e^{-E/T}$ = mixture
+$m^2T\,\Gamma(1,T) + 2mT^2\,\Gamma(2,T) + 2T^3\,\Gamma(3,T)$, accepted with probability $p/E$.
+Two Lorentz boosts, first by the transverse flow $\vec\beta=(\vec v_f,0)$, then longitudinally by
+$\vec\beta = (0,0,\tanh\eta_s)$:
+\begin{equation}
+E' = \gamma\big(E+\vec\beta\!\cdot\!\vec p\big),\qquad
+\vec p\,' = \vec p + \Big[\frac{(\gamma-1)\,\vec\beta\!\cdot\!\vec p}{\beta^2} + \gamma E\Big]\vec\beta .
+\end{equation}
+This is the Monte Carlo form of the Schnedermann--Sollfrank--Heinz blast wave
+\begin{equation}
+\frac{\mathrm dN}{m_T\,\mathrm dm_T} \propto \int_0^R r\,\mathrm dr\; m_T\,
+I_0\!\Big(\frac{p_T\sinh\rho}{T_\text{kin}}\Big)\,K_1\!\Big(\frac{m_T\cosh\rho}{T_\text{kin}}\Big),\qquad
+\rho = \operatorname{artanh}\beta_T(r),
+\end{equation}
+which is \emph{not} evaluated directly (the Bessel functions of Sec.~\ref{sec:special} are implemented and tested for it).
+
+\subsection{Observables}
+\begin{equation}
+p_T = \sqrt{p_x^2+p_y^2},\quad \phi = \operatorname{atan2}(p_y,p_x),\quad
+y = \tfrac12\ln\frac{E+p_z}{E-p_z},\quad \eta = \operatorname{artanh}\frac{p_z}{|\vec p|},
+\end{equation}
+\begin{equation}
+v_n = \big\langle\cos n(\phi-\Psi_n)\big\rangle_{\text{charged},\ |\eta|<0.8,\ 0.2<p_T<5~\text{GeV}}\quad
+\text{(ALICE acceptance)}.
+\end{equation}
+
+\subsection{Positions at lab time $t$}
+Per hadron, $\tau_p = t/\cosh\eta_s$. Fluid phase ($\tau_0\le\tau_p<\tau_f$): transverse position interpolated linearly in
+$\tau$ from the tracer history, $z=\tau_p\sinh\eta_s$. Free streaming ($\tau_p\ge\tau_f$):
+\begin{equation}
+\vec x(t) = \vec x_f + \vec v\,(t-t_f),\qquad \vec v = \vec p/E .
+\end{equation}
+
+%=====================================================================
+\section{Data lookup and calibration}\label{sec:calib}
+\src{\file{hic\_core/event.py}, \file{hic\_core/freezeout.py}}
+
+Tabulated inputs are interpolated in centrality: multiplicity and yields in $\log$, blast-wave parameters and $v_n$
+linearly. For systems without their own table, the reference quantities are taken at the \emph{equal-multiplicity
+centrality}\emp
+\begin{equation}
+c_\text{eq} = c_\text{ref}\Big(\ln\frac{\mathrm dN_\text{ch}}{\mathrm d\eta}\Big)\ \ \text{(interpolation, clamped to the table)},
+\end{equation}
+and the flow targets follow linear response\emp:
+\begin{equation}
+v_n^\text{target} = v_n^\text{ref}(c_\text{eq})\,\frac{\varepsilon_n}{\varepsilon_n^\text{ref}(c_\text{eq})}\quad(n=2,3),\qquad
+v_4^\text{target} = v_4^\text{ref}(c_\text{eq}).
+\end{equation}
+\textbf{Stage 1 -- flow strength.} The gain $g$ is adjusted until the midrapidity ($|y|<0.5$) pion $\langle p_T\rangle$
+matches data within 3\%: $g\to\operatorname{clip}\big(g\,(\langle p_T\rangle_\text{data}/\langle p_T\rangle_\text{model})^{1/2},0.3,3\big)$
+until the target is bracketed, then bisection $g\to\tfrac12(g_\text{lo}+g_\text{hi})$ (at most 12 iterations).
+
+\textbf{Stage 2 -- anisotropy.} Start $a_{2,3}=0.8\,v^\text{target}_{2,3}$, $a_4 = 0.5\,v_4^\text{target}$;
+iterate (at most 8 times)
+\begin{equation}
+a_n \to \operatorname{clip}\big(a_n + 0.7\,(v_n^\text{target}-v_n^\text{model}),\ -0.8,\ 0.8\big)
+\quad\text{until}\quad |v_n^\text{model}-v_n^\text{target}|\le\max(0.003,\,0.05|v_n^\text{target}|),
+\end{equation}
+with $v_n^\text{model}$ measured on $\ge8\times10^4$ bootstrapped emissions of the event's own tracers.
+A TRENTo event file, when supplied, replaces $T_R$ (bilinear resampling) and provides $\varepsilon_n$; $\Psi_n$ are then
+computed from its grid with the field formula above.
+
+%=====================================================================
+\section{Nucleons, spectators and the time axis}
+\src{\file{hic\_core/event.py}}
+
+Frame times\vis: $N_\text{pre}$ approach frames and $N_\text{post}+1$ collision frames with an optional time warp $w_p$,
+\begin{equation}
+t_i = -t_\text{app}\Big(1-\frac{i}{N_\text{pre}}\Big),\qquad
+t_j = t_\text{end}\Big(\frac{j}{N_\text{post}}\Big)^{w_p}.
+\end{equation}
+Nucleon positions: rest-frame $z$ compressed by $\zeta = \max(1/\gamma,\ L_\text{floor}/2R)$ (the visual thickness floor
+$L_\text{floor}$ is reported on screen\vis); before the collision ($t<0$), with $d=\pm1$ the beam direction,
+\begin{equation}
+\vec x_\perp(t) = \vec x_{\perp,0},\qquad z(t) = \zeta z_\text{rest} + d\,\beta\,t .
+\end{equation}
+Spectators after the collision (beam rapidity plus Fermi motion, $p_F=0.26$ GeV, Moniz et al.\ PRL 26 (1971) 445):
+\begin{equation}
+p_z = d\,\gamma\beta m,\quad p_{x,y}\sim\mathcal N\!\big(0,\,p_F^2/5\big),\quad E=\sqrt{p^2+m^2},\quad
+\vec x(t) = (\vec x_{\perp,0},\,\zeta z_\text{rest}) + \frac{\vec p}{E}\,t .
+\end{equation}
+Participants (visual hand-over to the fireball\vis): keep $z = \zeta z_\text{rest}+d\beta t$ until $t = \tau_0+0.3$ fm/$c$,
+sphere radius scaled by $\max(0,\,1-t/(\tau_0+0.3))$.
+
+%=====================================================================
+\section{Importers (Level B)}
+\src{\file{hic\_core/importers/}; formats in \file{docs/physics/04-simulation-formats.md}}
+
+Particles between output times move on straight lines (block at the latest $t_k\le t$); UrQMD final lists from each
+particle's own freeze-out point:
+\begin{equation}
+\vec x(t) = \vec x_k + \frac{\vec p}{E}\,(t-t_k),\qquad \vec x(t) = \vec x_f + \frac{\vec p}{E}\,(t-t_f),\ t\ge t_f .
+\end{equation}
+Hydro grids are sampled in Milne coordinates, linearly in $\tau$ and trilinearly in $(x,y,\eta_s)$, with fractional
+indices $f_x = (x-x_0)/\Delta x$ etc.:
+\begin{equation}
+T = (1-w_\tau)\,T_k + w_\tau\,T_{k+1},\qquad
+T_k = \sum_{a,b,c\in\{0,1\}} \lambda_x^{a}\lambda_y^{b}\lambda_\eta^{c}\;T_k[i_0+a,\,j_0+b,\,l_0+c],
+\end{equation}
+$\lambda^0 = 1-\{f\}$, $\lambda^1 = \{f\}$; 2+1D grids apply for $|\eta_s|<\eta_\text{window}$ (default 2).
+TRENTo cell centres and step: $x_i = (i+\tfrac12)\Delta - \tfrac{n\Delta}{2}$, $\Delta = \sqrt{\text{mult}/\sum g}$ if
+not given (file stored $[i_y][i_x]$).
+vHLLE: $\tau_k = \tau_{k-1} + (\text{step}_k-\text{step}_{k-1})\,\Delta\tau\,(2~\text{after the grid resize})$,
+origin after resize $=-(n-1)\Delta/2$. MUSIC: $\tau_k=\tau_0+k\,\Delta\tau_\text{out}$, $x_i = x_\text{min}+i\,\Delta x$.
+Codes that output GeV: $T[\text{MeV}] = 1000\,T[\text{GeV}]$. Exporter (MUSIC format): $e=\varepsilon(T)$, $P=p(T)$,
+$c_s^2(T)$ from the EoS, cells with $e<e_\text{cut}$ omitted.
+
+%=====================================================================
+\section{Special functions}\label{sec:special}
+\src{\file{hic\_core/special.py}; Abramowitz \& Stegun 9.8.1--9.8.8; Numerical Recipes 6.2}
+
+Regularised incomplete gamma: series for $x<a+1$, Lentz continued fraction otherwise,
+\begin{equation}
+P(a,x) = \frac{e^{-x}x^a}{\Gamma(a)}\sum_{n\ge0}\frac{x^n}{a(a+1)\cdots(a+n)},\qquad Q = 1-P,
+\end{equation}
+\begin{equation}
+Q(a,x) = \frac{e^{-x}x^a}{\Gamma(a)}\;\cfrac{1}{x+1-a-\cfrac{1\cdot(1-a)}{x+3-a-\cfrac{2\cdot(2-a)}{x+5-a-\cdots}}} .
+\end{equation}
+Modified Bessel functions, $t=(x/3.75)^2$, $y=3.75/x$, $u=(x/2)^2$, $w=2/x$
+(first line of each pair: small argument, second: large argument):
+{\footnotesize
+\begin{align}
+I_0 &= 1+3.5156229t+3.0899424t^2+1.2067492t^3+0.2659732t^4+0.0360768t^5+0.0045813t^6 && \scriptstyle |x|<3.75\nonumber\\
+I_0 &= \tfrac{e^{x}}{\sqrt x}\big(0.39894228+0.01328592y+0.00225319y^2-0.00157565y^3+0.00916281y^4\nonumber\\
+&\qquad -0.02057706y^5+0.02635537y^6-0.01647633y^7+0.00392377y^8\big) && \scriptstyle x\ge3.75\\[2pt]
+I_1 &= x\big(0.5+0.87890594t+0.51498869t^2+0.15084934t^3+0.02658733t^4+0.00301532t^5+0.00032411t^6\big)\nonumber\\
+I_1 &= \tfrac{e^{x}}{\sqrt x}\big(0.39894228-0.03988024y-0.00362018y^2+0.00163801y^3-0.01031555y^4\nonumber\\
+&\qquad +0.02282967y^5-0.02895312y^6+0.01787654y^7-0.00420059y^8\big)\\[2pt]
+K_0 &= -\ln\tfrac x2\,I_0 - 0.57721566+0.42278420u+0.23069756u^2+0.03488590u^3\nonumber\\
+&\qquad +0.00262698u^4+0.00010750u^5+0.0000074u^6 && \scriptstyle x\le2\nonumber\\
+K_0 &= \tfrac{e^{-x}}{\sqrt x}\big(1.25331414-0.07832358w+0.02189568w^2-0.01062446w^3\nonumber\\
+&\qquad +0.00587872w^4-0.00251540w^5+0.00053208w^6\big) && \scriptstyle x>2\\[2pt]
+K_1 &= \ln\tfrac x2\,I_1 + \tfrac1x\big(1+0.15443144u-0.67278579u^2-0.18156897u^3\nonumber\\
+&\qquad -0.01919402u^4-0.00110404u^5-0.00004686u^6\big) && \scriptstyle x\le2\nonumber\\
+K_1 &= \tfrac{e^{-x}}{\sqrt x}\big(1.25331414+0.23498619w-0.03655620w^2+0.01504268w^3\nonumber\\
+&\qquad -0.00780353w^4+0.00325614w^5-0.00068245w^6\big) && \scriptstyle x>2
+\end{align}}
+
+%=====================================================================
+\section{Visual mappings in Blender\vis}
+\src{\file{hic\_viz/scene.py}}
+
+These only decide how numbers are drawn.
+
+\textbf{Colour.} Blackbody colour of a mapped temperature (the real temperatures are $\sim2\times10^{12}$ K):
+\begin{equation}
+T_\text{colour}[\text{K}] = 13\,\tfrac{\text{K}}{\text{MeV}}\times T[\text{MeV}]
+\qquad(T_c\mapsto2000~\text{K},\ 500~\text{MeV}\mapsto6500~\text{K}).
+\end{equation}
+\textbf{Volume density} of the fireball shader (smoothstep fade; $(T_1,T_2) = (156.5,172)$ MeV when hadrons are drawn,
+$(110,150)$ MeV otherwise):
+\begin{gather}
+\rho_\text{vol} = 0.15\,\sqrt{\frac{\varepsilon}{10~\text{GeV fm}^{-3}}}\ \operatorname{smoothstep}(T;T_1,T_2),\nonumber\\
+\operatorname{smoothstep} = u^2(3-2u),\qquad u=\operatorname{clip}\Big(\frac{T-T_1}{T_2-T_1},0,1\Big).
+\end{gather}
+\textbf{Sizes.} Nucleon spheres 0.8 fm, flattened along the beam by $\max(1/\gamma,\,L_\text{floor}/1.6)$; hadron spheres
+0.15 fm (fluid phase) and 0.25 fm (free streaming) times a species factor (0.8--1.25).
+
+\textbf{Framing.} Regions that must stay in view (longitudinal $L$, transverse $T_\perp$; $R$ = nuclear radius):
+\begin{align}
+t<0:&\quad L = |t|+0.3R+2, && T_\perp = R+\tfrac b2+1.5,\nonumber\\
+t\ge0:&\quad L = \max(R,\,0.85t+6), && T_\perp = \max\!\big(R+\tfrac b2+1.5,\ R+1.5+0.6t\big).
+\end{align}
+Screen half-extents at distance $d$ for the 40 mm lens / 36 mm sensor and aspect $a=W/H$:
+\begin{gather}
+(h_x,h_y) = \begin{cases}(0.45d,\ 0.45d/a) & a\ge1\\ (0.45d\,a,\ 0.45d) & a<1\end{cases},\nonumber\\
+\text{camera scale} = \max\!\Big(\frac{L}{0.85\,h_\parallel},\ \frac{T_\perp}{0.85\,h_\perp}\Big)\quad\text{(at } d=50\text{)},
+\end{gather}
+$h_\parallel,h_\perp$ being the screen half-extents along which the beam and the transverse plane are drawn.
+Orbit move: rotation angle $70^\circ\times u^2(3-2u)$ over the post-collision frames.
+
+\textbf{HUD.} $t[\text{s}] = t[\text{fm}/c]\times3.336\times10^{-24}$.
+
+%=====================================================================
+\section{Validation metric}
+\src{\file{scripts/validate.py}}
+\begin{equation}
+\Delta = 100\,\frac{X_\text{model}-X_\text{measured}}{X_\text{measured}}~\%.
+\end{equation}
+
+%=====================================================================
+\section{Interactive explorer additions (The Little Bang)}
+\src{\file{web/src/physics/*.js}, \file{web/src/scene/hits.js}}
+The browser explorer ports Sections~\ref{sec:kin}--\ref{sec:calib} (checked against Python in
+\file{web/test/physics.test.mjs}). It adds the following.
+
+\textbf{Custom nucleus} (any $A$; Miller et al.\ 2007, nucl-ex/0701025; valley of stability)\emp:
+\begin{equation}
+R = 1.12\,A^{1/3} - 0.86\,A^{-1/3}~\text{fm},\qquad a = 0.54~\text{fm},\qquad Z = \operatorname{round}\frac{A}{1.98 + 0.0155\,A^{2/3}}.
+\end{equation}
+
+\textbf{Optical-Glauber centrality} (for custom nuclei; same review, Eq.~5):
+\begin{gather}
+T_A(s) = \int\!\rho_A\big(\sqrt{s^2+z^2}\big)\,dz,\quad \int T_A\,d^2s = A,\qquad
+T_{AB}(b) = \int T_A(\vec s)\,T_B(\vec s-\vec b)\,d^2s,\\
+P_\text{inel}(b) = 1-\Big(1-\frac{\sigma_{NN}T_{AB}(b)}{AB}\Big)^{AB},\qquad
+c(b) = \frac{\int_0^b P_\text{inel}\,2\pi b'\,db'}{\int_0^\infty P_\text{inel}\,2\pi b'\,db'}.
+\end{gather}
+
+\textbf{Coulomb deflection of the projectile} (impact approximation; Jackson \S13.1):
+\begin{equation}
+\theta_C = \frac{2 Z_A Z_B\,\alpha\hbar c}{b\,p\,\beta},\qquad p = A_A\,\gamma\beta\,m_N.
+\end{equation}
+
+\textbf{Detector hits}: $N = 1.6\,dN_\text{ch}/d\eta$ particles in $|\eta|<0.8$, azimuths from
+$dN/d\varphi \propto 1+2\sum_{n=2}^{4}v_n\cos n(\varphi-\Psi_n)$, hit position $z = r\sinh\eta$ on a barrel of radius $r$;
+measured $v_2 = \langle\cos 2(\varphi-\Psi_2)\rangle \pm \sqrt{1/(2N)}$. Arrival times\vis.
+
+%=====================================================================
+\part*{Multi-nucleon transfer explorer (The Nucleon Exchange)}
+\addcontentsline{toc}{part}{Multi-nucleon transfer explorer}
+Implementation: \file{web/mnt/src/physics/*.js}; plan, research and validation: \file{docs/mnt/}. Units: fm, fm/$c$,
+MeV, $c=1$; $e^2 = 1.439964$~MeV\,fm, $\hbar c = 197.327$~MeV\,fm, $m_u = 931.494$~MeV,
+1~zs $=10^{-21}$~s $=299.79$~fm/$c$.
+
+\section{Nuclear input data}
+\src{\file{web/mnt/src/physics/nuclides.js}; AME2020, FRDM2012, WS4}
+Mass excess $\Delta(Z,N)$: AME2020 where measured or extrapolated, FRDM2012 elsewhere (IAEA RIPL-4 merge).
+\begin{gather}
+B(Z,N) = Z\,\Delta_{^1\text{H}} + N\,\Delta_n - \Delta(Z,N),\qquad S_n(Z,N) = B(Z,N)-B(Z,N-1),\\
+Q_{gg} = \Delta_P + \Delta_T - \Delta_1 - \Delta_2 .
+\end{gather}
+
+\section{Nucleus--nucleus potential}
+\src{\file{potential.js}; Błocki et al.\ 1977; Bass 1980; Dutt \& Puri 2010}
+\textbf{Proximity 1977} (default):
+\begin{gather}
+V_N = 4\pi\gamma\,b\,\bar C\,\Phi(\xi),\quad \xi = \frac{r-C_1-C_2}{b},\quad b=1~\text{fm},\quad
+\bar C = \frac{C_1C_2}{C_1+C_2},\quad C_i = R_i\Big[1-\Big(\frac{b}{R_i}\Big)^2\Big],\\
+R_i = 1.28A_i^{1/3}-0.76+0.8A_i^{-1/3},\qquad \gamma = 0.9517\big[1-1.7826\,I^2\big]~\text{MeV fm}^{-2},\quad I=\frac{N-Z}{A},\\
+\Phi(\xi) = \begin{cases}-\tfrac12(\xi-2.54)^2-0.0852(\xi-2.54)^3 & -1\le\xi\le1.2511\\ -3.437\,e^{-\xi/0.75} & \xi\ge1.2511\end{cases}
+\end{gather}
+Below $\xi=-1$ the cubic turns over (an artefact); it is continued linearly with a wall $6(\xi+1.5)^2$ for $\xi<-1.5$\emp.
+\textbf{Bass 1980} (barrier heights, $V_B$ in the page):
+$V_N = -\frac{R_1R_2}{R_1+R_2}\big[0.033\,e^{s/3.5}+0.007\,e^{s/0.65}\big]^{-1}$, $R_i = R_s(1-0.98/R_s^2)$.
+\textbf{Coulomb}: $V_C = Z_1Z_2e^2/r$ for $r\ge R_C$, $\frac{Z_1Z_2e^2}{2R_C}(3-r^2/R_C^2)$ inside, $R_C = 1.2(A_1^{1/3}+A_2^{1/3})$.
+
+\textbf{Neck thinning and elongation}\emp: $V_N(r,d) = \big(1-d/d_\text{sc}\big)\,V_N(r-d)$ with the scission elongation from
+Viola systematics, $d_\text{sc} = r_\text{sc}-C_1-C_2$, $r_\text{sc} = e^2(A_1^{1/3}+A_2^{1/3})/0.755$ (i.e.\
+$\text{TKE} = 0.755\,Z_1Z_2/(A_1^{1/3}+A_2^{1/3})+7.3$~MeV).
+
+\textbf{Deformed nuclei} ($A\ge100$, $|\beta_2|\ge0.15$, FRDM2012): $C_i \to C_i + R_i\big[\beta_2Y_{20}(\cos\theta_i)+\beta_4Y_{40}(\cos\theta_i)\big]$,
+averaged over random orientations with 3-point Gauss--Legendre in $\cos\theta_i\in[0,1]$ (nodes 0.1127, 0.5, 0.8873; weights
+$5/18, 8/18, 5/18$)\emp.
+
+\section{Classical trajectory with surface friction}
+\src{\file{trajectory.js}; Gross \& Kalinowski 1978; Abe \& Bouriquet 2003}
+\begin{gather}
+\dot r = \frac{p}{\mu},\quad \dot p = -\partial_r V(r,d) + \frac{L^2}{\mu r^3} - K_r\,\dot r,\quad
+\dot\theta = \frac{L}{\mu r^2},\quad \dot L = -\frac{K_\phi}{\mu}\,(L-L_\text{st}),\\
+K_r = K_r^0\,\Big(\frac{\partial V_N}{\partial r}\Big)^2,\quad K_\phi = K_\phi^0\,\Big(\frac{\partial V_N}{\partial r}\Big)^2(1+x),\\
+x = \frac52\Big(\frac{r-d}{C_1+C_2}\Big)^2,\quad L_\text{st} = L_0\,\frac{x}{1+x},\\
+\dot d = F(s)\,\frac{d_\text{eq}-d}{\tau_d},\quad d_\text{eq} = f_V\,g(x_m)\,d_\text{sc},\quad \tau_d = 4~\text{zs}\ (\text{Li et al.\ 2006}),\\
+F(s) = \frac{1}{1+e^{(s-s_C)/a_C}},\quad s = r-d-C_1-C_2 .
+\end{gather}
+$\mu = m_u A_1A_2/(A_1+A_2)$, $L_0 = \ell\hbar$, $K^0$ converted with $1~\text{s} = 2.998\times10^{23}$~fm/$c$.
+Mean fissility (du Rietz et al.\ 2013) and quasi-fission propensity\emp:
+\begin{gather}
+x_m = \tfrac34 x_\text{eff} + \tfrac14 x_\text{CN},\qquad g = \frac{1}{1+e^{-(x_m-0.79)/0.02}},\\
+x_\text{eff} = \frac{4Z_1Z_2/\big(A_1^{1/3}A_2^{1/3}(A_1^{1/3}+A_2^{1/3})\big)}{50.883(1-1.7826I^2)},\quad
+x_\text{CN} = \frac{Z^2/A}{50.883(1-1.7826I^2)}.
+\end{gather}
+\textbf{Energies}: $E_\text{rel} = \frac{p^2}{2\mu}+\frac{L^2}{2\mu r^2}+V(r,d)$, $E_\text{spin} = \frac{(L_0-L)^2}{2(\mathcal J_1+\mathcal J_2)}$,
+$\mathcal J_i = \frac25 m_i C_i^2$, $E_\text{diss} = E_\text{cm}-E_\text{rel}-E_\text{spin}$, TKEL $= E_\text{diss}+E_\text{spin}$.
+\textbf{Deflection function} with the Coulomb tails ($k = Z_1Z_2e^2$):
+\begin{gather}
+\Theta(\ell) = \pi - \big(\Delta\theta_\text{in} + \Delta\theta_\text{orbit} + \Delta\theta_\text{out}\big),\\
+\Delta\theta(E,L,r) = \arccos\frac1\varepsilon - \arccos\frac{L^2/(\mu k r)+1}{\varepsilon},\quad
+\varepsilon = \sqrt{1+\frac{2EL^2}{\mu k^2}},
+\end{gather}
+Rutherford when the orbit never enters $r_0 = 60$~fm: $\sin(\Theta/2) = 1/\varepsilon$.
+
+\textbf{Capture and quasi-fission.} Trapped when $E_\text{rel} < V_\text{top}$, the outer barrier of
+$V_\text{eff} = V(r',d) + L^2/(2\mu r'^2)$. At first capture a fraction $1-g(x_m)$ fuses\emp; the rest decays with the Kramers rate
+(Zhu, Feng \& Zhang 2015: $\Gamma=2.8$, $\hbar\omega_B=2.0$, $\hbar\omega=3.0$~MeV)
+\begin{gather}
+\Lambda_\text{qf} = \frac{\omega}{2\pi\omega_B}\Big[\sqrt{(\Gamma/2\hbar)^2+\omega_B^2}-\Gamma/2\hbar\Big]\,e^{-B_\text{qf}/T},\\
+B_\text{qf} = V_\text{top}-E_\text{rel},\quad T = \sqrt{E_\text{diss}/a},\ a = A/12~\text{MeV}^{-1},
+\end{gather}
+leaving with $\text{TKE} = V_\text{top}$ at the angle reached at that time; systems still together after 15~zs count as captured\emp.
+
+\section{Nucleon exchange}
+\src{\file{transfer.js}; Feng et al.\ 2009; Ayik et al.\ 2018}
+Master equation for the projectile-like fragment $(Z_1,N_1)$ with single-nucleon steps and bounded detailed-balance rates\emp:
+\begin{gather}
+\frac{dP_i}{dt} = \sum_{j\in\text{nb}(i)}\big(W_{j\to i}P_j - W_{i\to j}P_i\big),\\
+W_{i\to j} = \frac{2D_{\alpha}}{1+e^{(U_j-U_i)/T_\text{eff}}},\quad \frac{W_{i\to j}}{W_{j\to i}} = e^{-(U_j-U_i)/T_\text{eff}},\\
+D_{NN} = D_{NN}^0\,F(s(t)),\quad D_{ZZ} = \tfrac12 D_{NN},\quad T_\text{eff} = \max(T,T_\text{min}).
+\end{gather}
+For $|\Delta U|\ll T$ the drift is $-D\,\partial U/T$ (Einstein relation). Driving potential
+\begin{gather}
+U(Z_1,N_1) = \Delta_1+\Delta_2-\Delta_P-\Delta_T - (1-\phi_1)E_\text{mic,1} - (1-\phi_2)E_\text{mic,2}\\
++ \frac{Z_1Z_2e^2}{R} + \frac{\hbar^2\ell(\ell+1)}{2\mathcal J_\text{rel}} - U_\text{entrance},\\
+\phi(T,A) = \frac{\tau}{\sinh\tau},\quad \tau = \frac{2\pi^2T}{41A^{-1/3}}\ \ (\text{Bohr \& Mottelson; Ignatyuk 1975}),\\
+R = C(A_1)+C(A_2)+1~\text{fm},\quad \mathcal J_\text{rel} = \mu R^2 + \tfrac25 m_u\big(A_1C_1^2+A_2C_2^2\big).
+\end{gather}
+$E_\text{mic}$ is the FRDM2012 microscopic (shell + pairing) energy.
+
+\section{Cross sections, kinematics and de-excitation}
+\src{\file{model.js}, \file{evaporation.js}, \file{compare.js}}
+\begin{gather}
+\sigma_\text{pr}(Z_1,N_1) = \frac{\pi}{k^2}\sum_\ell(2\ell+1)\,\sum_\text{exits}w\,P_\ell(Z_1,N_1),\\
+k^2 = \frac{2\mu E_\text{cm}}{\hbar^2},\\
+E^* = E_\text{diss}+Q_{gg},\qquad E_i^* = E^*\frac{A_i}{A},\qquad \text{TKE} = E_\text{cm}+Q_{gg}-E^* .
+\end{gather}
+\textbf{Neutron evaporation}: while $E^*>S_n$, emit with spectrum $\varepsilon\,e^{-\varepsilon/T}$, $T=\sqrt{E^*/a}$, $a=A/12$;
+for $Z\ge88$ compete with fission (Yanez \& Loveland 2015):
+\begin{gather}
+\frac{\Gamma_n}{\Gamma_f} = \frac{4A^{2/3}a_f(E^*-S_n)}{K_0\,a_n\,[2\sqrt{a_f(E^*-B_f)}-1]}\\
+\times\exp\!\big[2\sqrt{a_n(E^*-S_n)}-2\sqrt{a_f(E^*-B_f)}\big],\quad K_0 = 14.4~\text{MeV},\ a_n=a_f,\\
+B_f(E^*) = B_\text{LD} + (B_f^\text{WS4}-B_\text{LD})\,e^{-E^*/18.5\,\text{MeV}}\emp,\\
+B_\text{LD} = \begin{cases}0.38(0.75-x)E_s & x<\tfrac23\\ 0.83(1-x)^3E_s & x\ge\tfrac23\end{cases},\quad
+E_s = 17.9439(1-1.7826I^2)A^{2/3}.
+\end{gather}
+\textbf{Lab angle of the projectile-like fragment} (detector windows):
+$\tan\theta_\text{lab} = \sin\chi/(\cos\chi+V_\text{cm}/v_1)$, $\chi=\arccos(\cos\Theta)$,
+$v_1 = \sqrt{2\,\text{TKE}\,A_T/(A_P(A_P+A_T))}$, accepted fraction of a Gaussian of width $4^\circ$ inside the window\emp.
+
+\textbf{Calibration and validation} (\file{scripts/mnt\_validate.mjs}): global parameters
+$(K_r^0, D_{NN}^0, s_C, a_C, T_\text{min}) = (2\times10^{-23}~\text{s/MeV},\ 0.06~(\text{fm}/c)^{-1},\ 1.5~\text{fm},\ 0.4~\text{fm},\ 7~\text{MeV})$\emp,
+fitted once by grid search on four training datasets (minimum mean rms of $\text{tef}$) and frozen;
+\begin{equation}
+\text{tef} = \log_{10}\frac{\sigma_\text{model}}{\sigma_\text{exp}}\quad\text{per measured nuclide (Barrett et al.\ 2015).}
+\end{equation}
+Thick targets: model averaged at 3 energies across the target. $K_\phi^0 = 0.01\times10^{-23}$~s/MeV (Gross--Kalinowski).
+
+\textbf{Visual mappings}\vis: nucleons placed uniformly in spheres of radius $1.12A^{1/3}$ (hard core 1.5~fm);
+nucleons move across the neck when $\operatorname{round}\langle Z_1\rangle$ or $\operatorname{round}\langle N_1\rangle$ changes; extra swaps at
+rate $0.25\,F$ per frame; neck radius $0.8+2.6F$~fm; Wilczyński smearing $\sigma_\theta = 3^\circ+0.04\chi$, $\sigma_E = 3+0.08\,\text{TKEL}$~MeV.
+
+\end{document}

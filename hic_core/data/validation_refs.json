@@ -1,0 +1,137 @@
+{
+ "_comment": "Measurements used ONLY to validate model predictions (not as inputs). scripts/validate.py compares against them.",
+ "UU_193_0_5": {
+  "A": "U238",
+  "B": "U238",
+  "sqrt_snn": 193,
+  "centrality": [
+   0,
+   5
+  ],
+  "dNch_deta": [
+   830.4,
+   67.8
+  ],
+  "Npart": [
+   418.8,
+   5.0
+  ],
+  "source": "PHENIX PRC 93 (2016) 024901 arXiv:1509.06727 Table XXX"
+ },
+ "UU_193_top1_v2": {
+  "A": "U238",
+  "B": "U238",
+  "sqrt_snn": 193,
+  "centrality": [
+   0,
+   1
+  ],
+  "v2": [
+   0.0272,
+   0.001
+  ],
+  "source": "STAR PRL 115 (2015) 222301 arXiv:1505.07812, v2{2} at Mult/<Mult>=1 in the top 1% ZDC class, |eta|<1, 0.2<pT<2 GeV/c"
+ },
+ "CuAu_200_0_5": {
+  "A": "Cu63",
+  "B": "Au197",
+  "sqrt_snn": 200,
+  "centrality": [
+   0,
+   5
+  ],
+  "dNch_deta": [
+   333.5,
+   25.0
+  ],
+  "Npart": [
+   189.0,
+   5.2
+  ],
+  "source": "PHENIX arXiv:1509.06727 Table XXVIII"
+ },
+ "RuRu_200_0_5": {
+  "A": "Ru96",
+  "B": "Ru96",
+  "sqrt_snn": 200,
+  "centrality": [
+   0,
+   5
+  ],
+  "Npart": [
+   166.8,
+   0.1
+  ],
+  "source": "STAR PRC 105 (2022) 014901 arXiv:2109.00131 Table III"
+ },
+ "ZrZr_200_0_5": {
+  "A": "Zr96",
+  "B": "Zr96",
+  "sqrt_snn": 200,
+  "centrality": [
+   0,
+   5
+  ],
+  "Npart": [
+   165.9,
+   0.1
+  ],
+  "source": "STAR arXiv:2109.00131 Table III"
+ },
+ "dAu_200_0_5": {
+  "A": "d",
+  "B": "Au197",
+  "sqrt_snn": 200,
+  "centrality": [
+   0,
+   5
+  ],
+  "Npart": [
+   17.8,
+   1.2
+  ],
+  "source": "PHENIX arXiv:1509.06727 Table XXXII"
+ },
+ "He3Au_200_0_5": {
+  "A": "He3",
+  "B": "Au197",
+  "sqrt_snn": 200,
+  "centrality": [
+   0,
+   5
+  ],
+  "Npart": [
+   25.0,
+   2.0
+  ],
+  "source": "PHENIX arXiv:1509.06727 Table XXXIV"
+ },
+ "pPb_5020_0_5": {
+  "A": "p",
+  "B": "Pb208",
+  "sqrt_snn": 5020,
+  "centrality": [
+   0,
+   5
+  ],
+  "Npart": [
+   15.7,
+   null
+  ],
+  "source": "ALICE PRC 91 (2015) 064905 arXiv:1412.6828 Table 2 (V0A, Glauber-NBD)"
+ },
+ "NeNe_5360_0_5": {
+  "A": "Ne20",
+  "B": "Ne20",
+  "sqrt_snn": 5360,
+  "centrality": [
+   0,
+   5
+  ],
+  "Npart": [
+   32.97,
+   0.5
+  ],
+  "source": "ATLAS arXiv:2606.20257 App. Table 1 (average of the 1% bins)"
+ }
+}

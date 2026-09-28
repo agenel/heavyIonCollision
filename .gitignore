@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+renders/
+cache/
+*.blend1
+*.npz
+*.vdb
+dist/
+data/raw/
+.DS_Store
+.claude/

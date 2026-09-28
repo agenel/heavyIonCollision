@@ -1,0 +1,6 @@
+{
+  "_comment": "Inelastic nucleon-nucleon cross section in mb vs sqrt(s_NN) in GeV. Presets from PHENIX PRC 93 (2016) 024901 arXiv:1509.06727 Tab. IV (7.7-200 GeV) and LKD18/LKD25 (LHC). Fit: sigma = a + b ln^n(s), s in GeV^2, d'Enterria & Loizides Ann. Rev. Nucl. Part. Sci. 71 (2021) 315 arXiv:2011.14909.",
+  "presets": {"7.7": 31.2, "19.6": 32.5, "39": 34.3, "62.4": 36.0, "130": 39.6, "200": 42.3,
+              "2760": 61.8, "5020": 67.6, "5360": 68.0, "5440": 68.4, "5500": 68.5},
+  "fit": {"a": 28.84, "b": 0.0458, "n": 2.374}
+}

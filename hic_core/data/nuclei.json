@@ -1,0 +1,17 @@
+{
+  "_comment": "Nuclear density parameters. R, a in fm; w, beta2, beta4 dimensionless. Sources: PHOBOS14 = Loizides, Nagle, Steinberg arXiv:1408.2549 (TGlauberMC); LKD18 = Loizides, Kamin, d'Enterria PRC 97 (2018) 054910 arXiv:1710.07098; Miller07 = Ann. Rev. Nucl. Part. Sci. 57 (2007) 205; STAR22 = PRC 105 (2022) 014901 arXiv:2109.00131; ALICE18Xe = PLB 790 (2019) 35 arXiv:1805.04432; LKD25 = arXiv:2507.05853. See docs/physics/01-initial-state.md.",
+  "p":    {"A": 1,   "Z": 1,  "kind": "point", "source": "single nucleon at origin"},
+  "d":    {"A": 2,   "Z": 1,  "kind": "hulthen", "hulthen_a": 0.228, "hulthen_b": 1.18, "source": "Miller07 Eq. 2; PHOBOS14 (a, b in 1/fm)"},
+  "He3":  {"A": 3,   "Z": 2,  "kind": "gauss_approx", "rms_radius": 1.966, "source": "APPROXIMATION: Gaussian matched to the He-3 charge rms radius 1.966 fm (CODATA/Sick 2008); the published Glauber MCs use tabulated GFMC configurations (PHOBOS14) which are not shipped here. Flagged [approximate]."},
+  "O16":  {"A": 16,  "Z": 8,  "kind": "ws", "R": 2.608, "a": 0.513, "w": -0.051, "beta2": 0.0, "beta4": 0.0, "source": "3pF, ADNDT via LKD25 Tab. 1 / PHOBOS14 Tab. I (w sign per ADNDT: -0.051)"},
+  "Ne20": {"A": 20,  "Z": 10, "kind": "ws", "R": 2.805, "a": 0.571, "w": 0.0, "beta2": 0.721, "beta4": 0.0, "source": "2pF ADNDT via LKD25 Tab. 1; beta2 = 0.721 [not independently verified]; ALICE uses ab-initio bowling-pin configurations (arXiv:2509.06428)"},
+  "Cu63": {"A": 63,  "Z": 29, "kind": "ws", "R": 4.20, "a": 0.596, "w": 0.0, "beta2": 0.162, "beta4": -0.006, "source": "PHOBOS14 Tab. I/II; LKD18 Tab. VI/VIII"},
+  "Ru96": {"A": 96,  "Z": 44, "kind": "ws", "R": 5.085, "a": 0.46, "w": 0.0, "beta2": 0.158, "beta4": 0.0, "source": "STAR22 Tab. II Case-1"},
+  "Zr96": {"A": 96,  "Z": 40, "kind": "ws", "R": 5.02, "a": 0.46, "w": 0.0, "beta2": 0.08, "beta4": 0.0, "source": "STAR22 Tab. II Case-1"},
+  "Xe129":{"A": 129, "Z": 54, "kind": "ws", "R": 5.36, "a": 0.59, "w": 0.0, "beta2": 0.18, "beta4": 0.0, "source": "ALICE18Xe; LKD18 Tab. VI/VIII (R scaled from Xe-132, beta2 interpolated)"},
+  "Au197":{"A": 197, "Z": 79, "kind": "ws", "R": 6.38, "a": 0.535, "w": 0.0, "beta2": -0.131, "beta4": -0.031, "source": "PHOBOS14 Tab. II; LKD18 Tab. VI/VIII; oblate"},
+  "Pb208":{"A": 208, "Z": 82, "kind": "ws", "R": 6.62, "a": 0.546, "w": 0.0, "beta2": 0.0, "beta4": 0.0,
+           "proton":  {"R": 6.68, "a": 0.447}, "neutron": {"R": 6.69, "a": 0.560},
+           "source": "LKD18 Tab. IV (charge 2pF R=6.62 a=0.546; D2pF point-proton/neutron radii with neutron skin, PREX-II consistent)"},
+  "U238": {"A": 238, "Z": 92, "kind": "ws", "R": 6.67, "a": 0.44, "w": 0.0, "beta2": 0.28, "beta4": 0.093, "source": "PHOBOS14 Tab. II (beta from Moeller et al.); prolate"}
+}

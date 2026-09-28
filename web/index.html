@@ -1,0 +1,250 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Little Bang</title>
+<meta name="description" content="An interactive heavy-ion collision: change the impact parameter and watch participants, spectators and the quark-gluon plasma respond.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #07090d;
+    --panel: rgba(13, 16, 23, 0.80);
+    --panel-solid: #0e1118;
+    --line: rgba(150, 172, 205, 0.16);
+    --line-strong: rgba(150, 172, 205, 0.32);
+    --text: #e6eaf1;
+    --muted: #8d97a9;
+    --faint: #5b6476;
+    --amber: #ffb14a;     /* nucleus A, projectile, moving +z */
+    --ice: #7cc4ff;       /* nucleus B, target, moving -z */
+    --hot: #fff1d6;       /* participants */
+    --accent: #a8dcff;    /* UI selection */
+    --warn: #ffcf70;
+    --display: "Unbounded", "Avenir Next", "Segoe UI", sans-serif;
+    --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    --r: 12px;
+  }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body { background: var(--bg); color: var(--text); font: 14px/1.45 var(--body); overflow: hidden; }
+  button, input, select { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  #app { position: relative; height: 100%; }
+  #stage { position: absolute; inset: 0; }
+  #stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+  .nt, .eyebrow.nt { text-transform: none; letter-spacing: 0.04em; }
+  .eyebrow sub { font-size: 0.8em; vertical-align: -0.15em; }
+  .eyebrow { font: 500 10.5px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+
+  /* ---------- two side columns over the full-height stage ---------- */
+  .col { position: absolute; top: 16px; bottom: 90px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; overflow-x: hidden;
+         scrollbar-width: none; pointer-events: none; }
+  .col::-webkit-scrollbar { display: none; }
+  .col > * { pointer-events: auto; flex: none; }
+  #left { left: 18px; width: 360px; }
+  #right { right: 18px; width: 352px; }
+  h1 { margin: 0; font: 700 28px/1.02 var(--display); letter-spacing: 0.01em; text-wrap: balance; }
+  h1 span { display: block; font-weight: 500; font-size: 11px; letter-spacing: 0.24em; color: var(--muted); margin-bottom: 7px; }
+  .lede { margin: 0; color: #c2c9d6; font-size: 13.5px; max-width: 42ch; }
+  #readouts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+  .ro { padding: 6px 8px 7px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); min-width: 0; }
+  .ro .eyebrow { font-size: 9px; display: block; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.08em; }
+  .ro b { font: 500 15px/1 var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .ro small { font: 400 10px var(--mono); color: var(--muted); margin-left: 2px; }
+  #story { padding: 11px 13px; font-size: 13px; color: #d5dbe5; }
+  #story p { margin: 0; min-height: 5.8em; }
+  #story .phase { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  #story .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+  .k-a { color: var(--amber); font-weight: 600; } .k-b { color: var(--ice); font-weight: 600; }
+  .k-hot { color: #ffd9a0; font-weight: 600; } .k-num { font-family: var(--mono); font-size: 0.93em; color: #fff; }
+  #warn { font-size: 12px; color: var(--warn); margin-top: 8px; }
+
+  #deck { padding: 13px; display: grid; gap: 13px; }
+  .row { display: grid; gap: 7px; }
+  .row-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .pills { display: flex; flex-wrap: wrap; gap: 5px; }
+  .pill { border: 1px solid var(--line); background: transparent; border-radius: 8px; padding: 5px 9px; cursor: pointer; font-size: 12.5px; color: #cfd6e2; }
+  .pill:hover { border-color: var(--line-strong); }
+  .pill[aria-pressed="true"] { background: #e8f4ff; color: #0b1320; border-color: #e8f4ff; font-weight: 600; }
+  .pill small { font-family: var(--mono); font-size: 10.5px; opacity: 0.7; margin-left: 4px; }
+  .zones { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+  .zones .pill { padding: 5px 2px; font-size: 11.5px; text-align: center; }
+  #bval { font: 500 20px/1 var(--mono); font-variant-numeric: tabular-nums; }
+  #bval small { font-size: 12px; color: var(--muted); }
+  input[type=range] { width: 100%; accent-color: var(--amber); margin: 2px 0; }
+  .tools { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .icon-btn { border: 1px solid var(--line); background: transparent; border-radius: 8px; padding: 5px 10px; cursor: pointer; font-size: 12.5px; color: #cfd6e2; }
+  .icon-btn:hover { border-color: var(--line-strong); }
+  .sysnote { font-size: 12px; color: var(--muted); margin: 0; }
+
+  .card { padding: 9px 11px 9px; margin: 0; }
+  .card header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; gap: 8px; }
+  .card header .val { font: 400 11px var(--mono); color: var(--muted); white-space: nowrap; }
+  .card canvas { display: block; width: 100%; height: auto; border-radius: 6px; }
+  #cardBmap canvas { cursor: ns-resize; }
+  #cardPhi { position: absolute; bottom: 88px; width: 330px; left: calc(50% + (378px - 370px) / 2); transform: translateX(-50%); }
+  .drawrow { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; margin-top: 6px; }
+  .drawrow input { margin: 0; }
+  .card figcaption { font-size: 11px; color: var(--muted); margin-top: 5px; line-height: 1.35; }
+
+  #timeline { position: absolute; left: 18px; right: 18px; bottom: 16px; height: 58px; display: grid; grid-template-columns: auto auto 1fr auto; gap: 12px; align-items: center; padding: 0 14px; }
+  #play { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line-strong); background: #e8f4ff; color: #0b1320; cursor: pointer; display: grid; place-items: center; font-size: 12px; }
+  #speed { font: 400 11px var(--mono); }
+  #scrub { position: relative; height: 40px; cursor: pointer; touch-action: none; }
+  #scrub .track { position: absolute; left: 0; right: 0; top: 13px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.08); overflow: hidden; }
+  #scrub .fill { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, var(--amber), #ffe2b0); }
+  #scrub .knob { position: absolute; top: 7px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 3px rgba(255,177,74,0.35); }
+  #scrub .mark { position: absolute; top: 24px; transform: translateX(-50%); font: 400 10px var(--mono); color: var(--muted); white-space: nowrap; cursor: pointer; padding-top: 3px; }
+  #scrub .mark::before { content: ""; position: absolute; left: 50%; top: -9px; width: 1px; height: 7px; background: var(--line-strong); }
+  #scrub .mark.on { color: var(--text); }
+  #tval { font: 500 13px/1.2 var(--mono); text-align: right; font-variant-numeric: tabular-nums; min-width: 128px; }
+  #tval small { display: block; font-size: 10.5px; color: var(--muted); font-weight: 400; }
+
+  /* 3D labels */
+  #labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .lab { position: absolute; transform: translate(-50%, -100%); font: 500 10.5px var(--mono); color: #dfe6f0; white-space: nowrap; padding: 3px 7px; border-radius: 6px; background: rgba(10,13,19,0.72); border: 1px solid var(--line); transition: opacity .25s; }
+  .lab::after { content: ""; position: absolute; left: 50%; top: 100%; width: 1px; height: 12px; background: var(--line-strong); }
+  .lab i { font-style: normal; display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+
+  /* busy indicator */
+  #busy { position: absolute; left: 50%; top: 18px; transform: translateX(-50%); font: 400 11px var(--mono); color: var(--muted); padding: 5px 10px; border-radius: 20px; }
+
+  /* explainer */
+  dialog { max-width: 680px; width: calc(100% - 32px); max-height: 84vh; background: var(--panel-solid); color: var(--text); border: 1px solid var(--line-strong); border-radius: 16px; padding: 0; }
+  dialog::backdrop { background: rgba(3,5,8,0.66); backdrop-filter: blur(3px); }
+  dialog .inner { padding: 22px 26px 26px; overflow: auto; max-height: 84vh; box-sizing: border-box; }
+  dialog h2 { font: 700 20px/1.2 var(--display); margin: 0 0 12px; }
+  dialog h3 { font: 500 11px var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin: 20px 0 6px; }
+  dialog p { margin: 0 0 8px; color: #cdd4df; max-width: 66ch; }
+  dialog ol { padding-left: 20px; color: #cdd4df; font-size: 12.5px; } dialog li { margin: 3px 0; }
+  dialog a { color: var(--accent); }
+  dialog .close { position: sticky; top: 0; float: right; border: 0; background: transparent; font-size: 22px; cursor: pointer; color: var(--muted); }
+
+  /* ---------- narrow screens: stack below the stage ---------- */
+  @media (max-width: 980px) {
+    body { overflow: auto; }
+    #app { height: auto; display: flex; flex-direction: column; gap: 12px; padding: 0 16px 24px; }
+    #stage { position: relative; height: 56vh; min-height: 330px; margin: 0 -16px; }
+    .col { display: contents; }
+    #left h1 { order: 0; padding-top: 14px; } .lede { order: 1; }
+    #stage { order: 2; } #timeline { order: 3; } #readouts { order: 4; } #story { order: 5; }
+    #deck { order: 6; } #cardBmap { order: 7; } #cardEye { order: 8; }
+    #cardPhi { position: static; order: 9; width: auto; transform: none; }
+    #timeline { position: static; grid-template-columns: auto 1fr; height: auto; padding: 8px 12px; row-gap: 2px; } #speed { display: none; }
+    #tval { grid-column: 1 / -1; text-align: left; } #tval small { display: inline; margin-left: 8px; }
+    #scrub .mark { font-size: 0; width: 8px; height: 12px; } #scrub .mark.key { font-size: 9.5px; width: auto; }
+    #busy { top: auto; bottom: 8px; }
+  }
+  @media (max-width: 420px) { #readouts { grid-template-columns: repeat(2, 1fr); } h1 { font-size: 25px; } }
+  @media (prefers-reduced-motion: reduce) { .lab { transition: none; } }
+</style>
+
+<div id="app">
+  <div id="stage" aria-label="3D view of the collision"></div>
+  <div id="labels" aria-hidden="true"></div>
+
+  <section id="left" class="col">
+    <h1><span>A HEAVY-ION COLLISION</span>The Little Bang</h1>
+    <p class="lede">Two nuclei, flattened by relativity, meet at nearly the speed of light. How far apart their centres pass, the impact parameter <em>b</em>, decides everything that follows.</p>
+    <div id="readouts">
+      <div class="ro"><span class="eyebrow"><span class="nt">b</span></span><b id="r-b">–</b><small>fm</small></div>
+      <div class="ro"><span class="eyebrow">Centrality</span><b id="r-c">–</b><small>%</small></div>
+      <div class="ro"><span class="eyebrow">N<sub>part</sub></span><b id="r-np">–</b></div>
+      <div class="ro"><span class="eyebrow">N<sub>coll</sub></span><b id="r-nc">–</b></div>
+      <div class="ro"><span class="eyebrow"><span class="nt">ε₂</span> almond</span><b id="r-e2">–</b></div>
+      <div class="ro"><span class="eyebrow">T now</span><b id="r-T">–</b><small>MeV</small></div>
+      <div class="ro"><span class="eyebrow">QGP lives</span><b id="r-life">–</b><small>fm/c</small></div>
+      <div class="ro"><span class="eyebrow"><span class="nt">dN<sub>ch</sub>/dη</span></span><b id="r-dn">–</b></div>
+    </div>
+    <div id="story" class="panel" aria-live="polite">
+      <div class="phase"><span class="dot" id="phaseDot"></span><span class="eyebrow" id="phaseName">Approach</span></div>
+      <p id="storyText">Loading the nuclei…</p>
+      <div id="warn" hidden></div>
+    </div>
+
+    <figure class="card panel" id="cardBmap">
+      <header><span class="eyebrow">Impact parameter map</span><span class="val" id="bmapVal"></span></header>
+      <canvas id="bmap" width="680" height="400" aria-label="Side view of the two nuclei and the impact parameter; drag vertically to change b"></canvas>
+      <figcaption>Drag the projectile up or down. Side view: beam left to right, <em>b</em> vertical.</figcaption>
+    </figure>
+  </section>
+
+  <section id="right" class="col">
+  <div id="deck" class="panel">
+    <div class="row">
+      <div class="row-head"><span class="eyebrow">Collision system</span><span class="eyebrow" id="sysEnergy"></span></div>
+      <div class="pills" id="systems" role="group" aria-label="Collision system"></div>
+      <div class="row" id="customRow" hidden>
+        <div class="row-head"><label class="eyebrow" for="aSlider">Nucleons per nucleus</label><span class="eyebrow nt" id="aVal"></span></div>
+        <input id="aSlider" type="range" min="10" max="260" step="1" value="100">
+        <div class="pills" id="energies" role="group" aria-label="Beam energy"></div>
+      </div>
+      <p class="sysnote" id="sysNote"></p>
+    </div>
+    <div class="row">
+      <div class="row-head"><label class="eyebrow" for="bSlider">Impact parameter</label><span id="bval">– <small>fm</small></span></div>
+      <input id="bSlider" type="range" min="0" max="20" step="0.05" value="7">
+      <div class="zones" id="zones" role="group" aria-label="Impact parameter zones"></div>
+    </div>
+    <div class="row">
+      <span class="eyebrow">View</span>
+      <div class="tools">
+        <div class="pills" id="views" role="group" aria-label="Camera"></div>
+      </div>
+      <div class="row-head"><span class="eyebrow">Nucleus shape</span></div>
+      <div class="pills" id="shapes" role="group" aria-label="Lorentz contraction"></div>
+      <div class="tools">
+        <button class="icon-btn" id="reseed" title="Draw new nucleon positions">New nuclei</button>
+        <button class="pill" id="tracks" aria-pressed="false" title="Draw particle tracks to the detector hits">Tracks</button>
+        <button class="icon-btn" id="help" aria-haspopup="dialog">How it works</button>
+      </div>
+    </div>
+  </div>
+      <figure class="card panel" id="cardEye">
+        <header><span class="eyebrow">Beam's-eye view</span><span class="val" id="eyeVal"></span></header>
+        <canvas id="eye" width="680" height="360" aria-label="Transverse plane: nucleons and temperature"></canvas>
+        <figcaption id="eyeCap">Looking down the beam. Filled dots collide; rings are spectators.</figcaption>
+      </figure>
+  </section>
+
+  <figure class="card panel" id="cardPhi">
+        <header><span class="eyebrow">Detector</span><span class="val" id="phiVal"></span></header>
+        <canvas id="phi" width="640" height="260" aria-label="Histogram of particle azimuth relative to the reaction plane"></canvas>
+        <div class="drawrow"><label class="eyebrow" for="nDraw">Particles drawn</label><input id="nDraw" type="range" min="0" max="100" step="1" value="35"><span class="eyebrow nt" id="nDrawVal"></span></div>
+        <figcaption id="phiCap">Charged particles in |η| &lt; 0.8 vs angle to the reaction plane.</figcaption>
+  </figure>
+
+  <div id="timeline" class="panel">
+    <button id="play" aria-label="Play">▶</button>
+    <button class="icon-btn" id="speed" title="Playback speed">1×</button>
+    <div id="scrub" role="slider" aria-label="Time" tabindex="0" aria-valuemin="0" aria-valuemax="1000" aria-valuenow="0">
+      <div class="track"><div class="fill" id="scrubFill"></div></div>
+      <div class="knob" id="scrubKnob"></div>
+      <div id="marks"></div>
+    </div>
+    <div id="tval">–</div>
+  </div>
+
+  <div id="busy" class="panel" hidden>computing the fireball…</div>
+</div>
+
+<dialog id="explainer">
+  <div class="inner">
+    <button class="close" id="closeHelp" aria-label="Close">×</button>
+    <h2>What you are looking at</h2>
+    <div id="explainerBody"></div>
+  </div>
+</dialog>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
+} }
+</script>
+<script type="module" src="src/main.js"></script>

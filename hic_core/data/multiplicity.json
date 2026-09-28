@@ -1,0 +1,342 @@
+{
+ "_comment": "Midrapidity charged-particle density dN_ch/deta (|eta|<0.5 unless noted) vs centrality, and the longitudinal shape. Sources: ALICE PRL 116 (2016) 222302 arXiv:1512.06104 (Pb-Pb 5.02); ALICE arXiv:1910.07678 Tab. 5 (0-5, 5-10); ALICE PLB 772 (2017) 567 arXiv:1612.08966 (80-90, total N_ch); ALICE PLB 726 (2013) 610 arXiv:1304.0347 (2.76 TeV shape fit); ALICE arXiv:2504.02505 (5.36 TeV); ALICE PLB 790 (2019) 35 arXiv:1805.04432 (Xe-Xe); PHOBOS PRC 83 (2011) 024913 arXiv:1011.1940 (Au-Au 200/62.4/19.6, |eta|<1); CMS arXiv:2606.02285 (O-O). See docs/physics/03-final-state-data.md. Added 2026-09-23 from PHENIX PRC 93 (2016) 024901 arXiv:1509.06727 (Tables VIII-XXXIV, |eta|<0.35, 0-5%), ALICE arXiv:1307.6796 Table 1 (p-Pb V0A classes, |eta_lab|<0.5), ATLAS arXiv:2606.20257 HEPData ins3170344 (Ne-Ne, pT>0 extrapolated; 0-5% = average of the 1% bins).",
+ "PbPb_5020": {
+  "centrality_mid": [
+   2.5,
+   7.5,
+   15,
+   25,
+   35,
+   45,
+   55,
+   65,
+   75,
+   85
+  ],
+  "dNch_deta": [
+   1943,
+   1587,
+   1180,
+   786,
+   512,
+   318,
+   183,
+   96.3,
+   44.9,
+   17.5
+  ],
+  "Nch_total_0_5": 21400,
+  "shape": {
+   "type": "double_gauss",
+   "A1": 2102,
+   "A2": 485,
+   "s1": 3.7,
+   "s2": 1.2,
+   "ref_A_mid": 1600,
+   "source": "ALICE 1304.0347 fit at 2.76 TeV, rescaled by dN/deta(0)"
+  }
+ },
+ "PbPb_2760": {
+  "centrality_mid": [
+   2.5,
+   7.5,
+   15,
+   25,
+   35,
+   45,
+   55,
+   65,
+   75,
+   85
+  ],
+  "dNch_deta": [
+   1601,
+   1294,
+   966,
+   649,
+   426,
+   261,
+   149,
+   76,
+   35,
+   13.4
+  ],
+  "Nch_total_0_5": 17165,
+  "shape": {
+   "type": "double_gauss",
+   "A1": 2102,
+   "A2": 485,
+   "s1": 3.7,
+   "s2": 1.2,
+   "ref_A_mid": 1600,
+   "source": "ALICE 1304.0347"
+  },
+  "_note": "0-5% = 1601 +/- 60 (ALICE 1012.1657); other bins from ALICE PRL 106 032301 Table 1 [values transcribed from the 2.76 TeV centrality paper; verify against HEPData ins880049]"
+ },
+ "PbPb_5360": {
+  "centrality_mid": [
+   2.5,
+   25,
+   55,
+   85
+  ],
+  "dNch_deta": [
+   2010,
+   836,
+   203,
+   21.5
+  ],
+  "Nch_total_0_5": null,
+  "shape": {
+   "type": "double_gauss",
+   "A1": 2102,
+   "A2": 485,
+   "s1": 3.7,
+   "s2": 1.2,
+   "ref_A_mid": 1600,
+   "source": "ALICE 1304.0347 shape"
+  }
+ },
+ "XeXe_5440": {
+  "centrality_mid": [
+   2.5,
+   25,
+   55,
+   85
+  ],
+  "dNch_deta": [
+   1167,
+   478,
+   118,
+   13.3
+  ],
+  "Nch_total_0_5": 13230,
+  "shape": {
+   "type": "double_gauss",
+   "A1": 2102,
+   "A2": 485,
+   "s1": 3.7,
+   "s2": 1.2,
+   "ref_A_mid": 1600,
+   "source": "ALICE 1304.0347 shape (Pb-Pb), assumed for Xe-Xe"
+  }
+ },
+ "OO_5360": {
+  "centrality_mid": [
+   2.5,
+   50
+  ],
+  "dNch_deta": [
+   135.0,
+   41.8
+  ],
+  "Nch_total_0_5": null,
+  "shape": {
+   "type": "double_gauss",
+   "A1": 2102,
+   "A2": 485,
+   "s1": 3.7,
+   "s2": 1.2,
+   "ref_A_mid": 1600,
+   "source": "assumed Pb-Pb shape"
+  }
+ },
+ "AuAu_200": {
+  "centrality_mid": [
+   1.5,
+   4.5,
+   12.5,
+   22.5,
+   32.5,
+   42.5,
+   52.5,
+   62.5
+  ],
+  "dNch_deta": [
+   691,
+   619,
+   465,
+   313,
+   208,
+   133,
+   73,
+   38
+  ],
+  "Nch_total_0_5": 5060,
+  "shape": {
+   "type": "fwhm_gauss",
+   "fwhm": 7.6,
+   "source": "PHOBOS 1011.1940: FWHM 7.1 at 130 GeV, ~7.6 at 200 GeV [interpolated, not verified]; limiting fragmentation near y_beam = 5.36"
+  }
+ },
+ "AuAu_62": {
+  "centrality_mid": [
+   1.5
+  ],
+  "dNch_deta": [
+   492
+  ],
+  "Nch_total_0_5": 2988,
+  "shape": {
+   "type": "fwhm_gauss",
+   "fwhm": 6.5,
+   "source": "PHOBOS 1011.1940 Table VII"
+  }
+ },
+ "CuCu_200": {
+  "centrality_mid": [
+   1.5
+  ],
+  "dNch_deta": [
+   198
+  ],
+  "Nch_total_0_5": null,
+  "shape": {
+   "type": "fwhm_gauss",
+   "fwhm": 7.6,
+   "source": "PHOBOS 1011.1940"
+  }
+ },
+ "AuAu_20": {
+  "centrality_mid": [
+   1.5
+  ],
+  "dNch_deta": [
+   331
+  ],
+  "Nch_total_0_5": 1680,
+  "shape": {
+   "type": "fwhm_gauss",
+   "fwhm": 4.8,
+   "source": "PHOBOS 1011.1940 Table VII"
+  },
+  "_note": "key uses round(19.6)=20 (glauber.system_key); was mis-keyed as AuAu_19 before 2026-09-23"
+ },
+ "AuAu_8": {
+  "centrality_mid": [
+   2.5
+  ],
+  "dNch_deta": [
+   192.4
+  ],
+  "Nch_total_0_5": null,
+  "shape": {
+   "type": "fwhm_gauss",
+   "fwhm": 3.6,
+   "source": "FWHM approximated by 2*y_beam*0.87 scaling of PHOBOS 19.6 GeV (4.8 at y_beam=3.04) [approximate]"
+  }
+ },
+ "AuAu_27": {
+  "centrality_mid": [
+   2.5
+  ],
+  "dNch_deta": [
+   321.2
+  ],
+  "Nch_total_0_5": null,
+  "shape": {
+   "type": "fwhm_gauss",
+   "fwhm": 5.3,
+   "source": "interpolated between PHOBOS 19.6 and 62.4 GeV FWHM [approximate]"
+  }
+ },
+ "AuAu_39": {
+  "centrality_mid": [
+   2.5
+  ],
+  "dNch_deta": [
+   363.2
+  ],
+  "Nch_total_0_5": null,
+  "shape": {
+   "type": "fwhm_gauss",
+   "fwhm": 5.7,
+   "source": "interpolated between PHOBOS 19.6 and 62.4 GeV FWHM [approximate]"
+  }
+ },
+ "pPb_5020": {
+  "centrality_mid": [
+   2.5,
+   7.5,
+   15,
+   30,
+   50,
+   70,
+   90
+  ],
+  "dNch_deta": [
+   45.0,
+   36.2,
+   30.5,
+   23.2,
+   16.1,
+   9.8,
+   4.4
+  ],
+  "Nch_total_0_5": null,
+  "_note": "ALICE V0A (Pb-going side) multiplicity classes; the model's p-Pb centrality comes from Glauber impact-parameter quantiles, which correlate only loosely with V0A classes",
+  "shape": {
+   "type": "double_gauss",
+   "A1": 2102,
+   "A2": 485,
+   "s1": 3.7,
+   "s2": 1.2,
+   "ref_A_mid": 1600,
+   "source": "Pb-Pb shape assumed; the real p-Pb dN/deta is asymmetric (ALICE 1412.6828 Fig. 16) [approximate]"
+  }
+ },
+ "dAu_200": {
+  "centrality_mid": [
+   2.5,
+   7.5,
+   15,
+   65
+  ],
+  "dNch_deta": [
+   20.8,
+   17.7,
+   15.5,
+   5.8
+  ],
+  "Nch_total_0_5": null,
+  "shape": {
+   "type": "fwhm_gauss",
+   "fwhm": 7.6,
+   "source": "Au-Au 200 GeV width assumed; real d-Au dN/deta is asymmetric [approximate]"
+  }
+ },
+ "He3Au_200": {
+  "centrality_mid": [
+   2.5
+  ],
+  "dNch_deta": [
+   26.3
+  ],
+  "Nch_total_0_5": null,
+  "shape": {
+   "type": "fwhm_gauss",
+   "fwhm": 7.6,
+   "source": "Au-Au 200 GeV width assumed [approximate]"
+  }
+ },
+ "NeNe_5360": {
+  "centrality_mid": [
+   2.5,
+   7.5
+  ],
+  "dNch_deta": [
+   155.5,
+   125.7
+  ],
+  "Nch_total_0_5": null,
+  "shape": {
+   "type": "double_gauss",
+   "A1": 2102,
+   "A2": 485,
+   "s1": 3.7,
+   "s2": 1.2,
+   "ref_A_mid": 1600,
+   "source": "Pb-Pb shape assumed"
+  }
+ }
+}
